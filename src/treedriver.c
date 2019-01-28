@@ -134,10 +134,9 @@ void treedriver(struct particles *sources, struct particles *targets,
     } else if (tree_type == 1) {
         if (pot_type == 0) {
         
-            make_matrix(tree_inter_list, batches->num, numnodes);
-            make_matrix(direct_inter_list, batches->num, numleaves);
-            
-            pc_make_interaction_list(troot, batches, tree_inter_list, direct_inter_list);
+            //make_matrix(tree_inter_list, batches->num, numnodes);
+            //make_matrix(direct_inter_list, batches->num, numleaves);
+            //pc_make_interaction_list(troot, batches, tree_inter_list, direct_inter_list);
             
             pc_treecode(troot, batches, sources, targets, tpeng, tEn);
             

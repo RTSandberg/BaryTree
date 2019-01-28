@@ -306,7 +306,7 @@ void compute_pc(struct tnode *p,
     double dxt, dyt, dzt, dist;
     double tx, ty, tz;
     int i, j, k, kk, ii;
-    double *temp_i, *temp_j, *temp_k;
+    double temp_i[torderlim], temp_j[torderlim], temp_k[torderlim];
 
     /* determine DIST for MAC test */
     tx = batch_mid[0] - p->x_mid;
@@ -315,24 +315,21 @@ void compute_pc(struct tnode *p,
     dist = sqrt(tx*tx + ty*ty + tz*tz);
 
     
-    if (((p->radius + batch_rad) < dist * sqrt(thetasq)) && (p->sqradius != 0.00)) {
+    if (((p->radius + batch_rad) < dist * sqrt(thetasq)) && (p->sqradius != 0.00)
+       && (torder3 < p->numpar)) {
     /*
      * If MAC is accepted and there is more than n0 particles
      * in the box, use the expansion for the approximation.
      */
      
-        make_vector(temp_i, torderlim);
-        make_vector(temp_j, torderlim);
-        make_vector(temp_k, torderlim);
-
         if (p->exist_ms == 0) {
-            make_vector(p->ms, (torderlim)*(torderlim)*(torderlim));
+            make_vector(p->ms, torder3);
             make_vector(p->tx, torderlim);
             make_vector(p->ty, torderlim);
             make_vector(p->tz, torderlim);
             
 
-            for (i = 0; i < (torderlim)*(torderlim)*(torderlim); i++)
+            for (i = 0; i < torder3; i++)
                 p->ms[i] = 0.0;
 
             pc_comp_ms(p, xS, yS, zS, qS);
@@ -361,16 +358,12 @@ void compute_pc(struct tnode *p,
             }
         }
         
-        free_vector(temp_i);
-        free_vector(temp_j);
-        free_vector(temp_k);
-        
     } else {
     /*
      * If MAC fails check to see if there are children. If not, perform direct
      * calculation. If there are children, call routine recursively for each.
      */
-        if (p->num_children == 0) {
+        if ((p->num_children == 0)) {
             pc_comp_direct(p->ibeg, p->iend, batch_ind[0], batch_ind[1],
                            xS, yS, zS, qS, xT, yT, zT, EnP);
         } else {
@@ -437,8 +430,8 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
     double xx, yy, zz;
     double *xibeg, *yibeg, *zibeg, *qibeg;
     
-    double *w1i, *w2j, *w3k, *dj, *Dd;
-    double **a1i, **a2j, **a3k;
+    double w1i[torderlim], w2j[torderlim], w3k[torderlim], dj[torderlim];
+    double *Dd, **a1i, **a2j, **a3k;
     
     xibeg = &(x[p->ibeg-1]);
     yibeg = &(y[p->ibeg-1]);
@@ -458,15 +451,9 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
         p->tz[i] = z0 + (tt[i] + 1.0)/2.0 * (z1 - z0);
     }
     
-    make_vector(w1i, torderlim);
-    make_vector(w2j, torderlim);
-    make_vector(w3k, torderlim);
-    make_vector(dj, torderlim);
-    
     make_matrix(a1i, torderlim, p->numpar);
     make_matrix(a2j, torderlim, p->numpar);
     make_matrix(a3k, torderlim, p->numpar);
-    
     make_vector(Dd, p->numpar);
     
     dj[0] = 0.5;
@@ -558,18 +545,9 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
         }
     }
     
-    
-    
-    free_vector(w1i);
-    free_vector(w2j);
-    free_vector(w3k);
-    
-    free_vector(dj);
-    
     free_matrix(a1i);
     free_matrix(a2j);
     free_matrix(a3k);
-
     free_vector(Dd);
     
     return;

@@ -24,7 +24,7 @@ double ***b1 = NULL;
 
 int *orderarr = NULL;
 
-int torder, torderlim, torderflat;
+int torder, torderlim, torderflat, torder3;
 int minlevel, maxlevel;
 int maxpars, minpars;
 int numleaves;
@@ -54,6 +54,7 @@ void setup(struct particles *particles, int order, double theta,
     torderlim = torder + 1;
     thetasq = theta * theta;
     torderflat = torderlim * (torderlim + 1) * (torderlim + 2) / 6;
+    torder3 = torderlim * torderlim * torderlim;
 
     /* allocating global Taylor expansion variables */
     make_vector(cf, torder+1);
