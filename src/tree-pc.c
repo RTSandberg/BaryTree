@@ -431,8 +431,8 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
     double xx, yy, zz;
     double *xibeg, *yibeg, *zibeg, *qibeg;
     
-    double w1i[torderlim], w2j[torderlim], w3k[torderlim], dj[torderlim];
-    double *Dd, **a1i, **a2j, **a3k;
+    double w1i[torderlim], dj[torderlim];
+    double Dd, a1i[torderlim], a2j[torderlim], a3k[torderlim];
     
     xibeg = &(x[p->ibeg-1]);
     yibeg = &(y[p->ibeg-1]);
@@ -452,25 +452,13 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
         p->tz[i] = z0 + (tt[i] + 1.0)/2.0 * (z1 - z0);
     }
     
-    make_matrix(a1i, torderlim, p->numpar);
-    make_matrix(a2j, torderlim, p->numpar);
-    make_matrix(a3k, torderlim, p->numpar);
-    make_vector(Dd, p->numpar);
-    
     dj[0] = 0.5;
     dj[torder] = 0.5;
     for (j = 1; j < torder; j++)
         dj[j] = 1.0;
     
-    for (j = 0; j < torderlim; j++) {
+    for (j = 0; j < torderlim; j++)
         w1i[j] = ((j % 2 == 0)? 1 : -1) * dj[j];
-        w2j[j] = w1i[j];
-        w3k[j] = w1i[j];
-    }
-    
-    sumA1 = 0.0;
-    sumA2 = 0.0;
-    sumA3 = 0.0;
     
     for (i = 0; i < p->numpar; i++) {
         xx = xibeg[i];
@@ -481,23 +469,18 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
         a2exactind = -1;
         a3exactind = -1;
         
+        sumA1 = 0.0;
+        sumA2 = 0.0;
+        sumA3 = 0.0;
+        
         for (j = 0; j < torderlim; j++) {
-            a1i[j][i] = w1i[j] / (xx - p->tx[j]);
-            a2j[j][i] = w2j[j] / (yy - p->ty[j]);
-            a3k[j][i] = w3k[j] / (zz - p->tz[j]);
-            
-            //if (isinf(a2j[j][i - p->ibeg + 1]))
-            //    printf("a2j %d, %d: %f, %f, %f\n", i, j, a2j[j][i - p->ibeg + 1], yy, p->ty[j]);
-            
-            //if (isinf(a1i[j][i - p->ibeg + 1]))
-            //    printf("a1i %d, %d: %f, %f, %f\n", i, j, a1i[j][i - p->ibeg + 1], xx, p->tx[j]);
+            a1i[j] = w1i[j] / (xx - p->tx[j]);
+            a2j[j] = w1i[j] / (yy - p->ty[j]);
+            a3k[j] = w1i[j] / (zz - p->tz[j]);
 
-            //if (isinf(a3k[j][i - p->ibeg + 1]))
-            //    printf("a3k %d, %d: %f, %f, %f\n", i, j, a3k[j][i - p->ibeg + 1], zz, p->tz[j]);
-
-            sumA1 += a1i[j][i];
-            sumA2 += a2j[j][i];
-            sumA3 += a3k[j][i];
+            sumA1 += a1i[j];
+            sumA2 += a2j[j];
+            sumA3 += a3k[j];
             
             if (fabs(xx - p->tx[j]) < DBL_MIN) a1exactind = j;
             if (fabs(yy - p->ty[j]) < DBL_MIN) a2exactind = j;
@@ -506,50 +489,34 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
         
         if (a1exactind > -1) {
             sumA1 = 1.0;
-            for (j = 0; j < torderlim; j++) a1i[j][i] = 0.0;
-            a1i[a1exactind][i] = 1.0;
+            for (j = 0; j < torderlim; j++) a1i[j] = 0.0;
+            a1i[a1exactind] = 1.0;
         }
         
         if (a2exactind > -1) {
             sumA2 = 1.0;
-            for (j = 0; j < torderlim; j++) a2j[j][i] = 0.0;
-            a2j[a2exactind][i] = 1.0;
+            for (j = 0; j < torderlim; j++) a2j[j] = 0.0;
+            a2j[a2exactind] = 1.0;
         }
         
         if (a3exactind > -1) {
             sumA3 = 1.0;
-            for (j = 0; j < torderlim; j++) a3k[j][i] = 0.0;
-            a3k[a3exactind][i] = 1.0;
+            for (j = 0; j < torderlim; j++) a3k[j] = 0.0;
+            a3k[a3exactind] = 1.0;
         }
         
-        Dd[i] = 1.0 / (sumA1 * sumA2 * sumA3);
-        
-        sumA1 = 0.0;
-        sumA2 = 0.0;
-        sumA3 = 0.0;
-    }
+        Dd = 1.0 / (sumA1 * sumA2 * sumA3) * qibeg[i];
     
-    kk = -1;
-    for (k3 = 0; k3 < torderlim; k3++) {
-        for (k2 = 0; k2 < torderlim; k2++) {
-            for (k1 = 0; k1 < torderlim; k1++) {
-                kk++;
-                for (i = 0; i < p->numpar; i++) {
-                    p->ms[kk] += a1i[k1][i] * a2j[k2][i] * a3k[k3][i]
-                               * Dd[i] * qibeg[i];
-                    
-                    //if (p->ms[kk] != p->ms[kk])
-                    //    printf("%d, %d, %d, %d: %f, %f, %f, %f, %f, %f\n", k1, k2, k3, i,
-                    //    p->ms[kk], Dd[i], q[p->ibeg-1+i], a1i[k1][i], a2j[k2][i], a3k[k3][i]);
+        kk = -1;
+        for (k3 = 0; k3 < torderlim; k3++) {
+            for (k2 = 0; k2 < torderlim; k2++) {
+                for (k1 = 0; k1 < torderlim; k1++) {
+                    kk++;
+                    p->ms[kk] += a1i[k1] * a2j[k2] * a3k[k3] * Dd;
                 }
             }
         }
     }
-    
-    free_matrix(a1i);
-    free_matrix(a2j);
-    free_matrix(a3k);
-    free_vector(Dd);
     
     return;
     
