@@ -700,6 +700,9 @@ void cleanup(struct tnode *p)
     free_3array(a1);
 
     free_vector(orderarr);
+    
+    free_vector(tt);
+    free_vector(ww);
 
     remove_node(p);
     free(p);
