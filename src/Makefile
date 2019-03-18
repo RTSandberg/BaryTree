@@ -14,7 +14,7 @@ CC = mpicc
 UNAME := $(shell uname -s)
 
 ifeq ($(UNAME),Linux)
-CFLAGS = -Wall -std=gnu99 -lm
+CFLAGS = -Wall -std=gnu99 -lm -O3
 endif
 ifeq ($(UNAME),Darwin)
 CFLAGS = -Wall
