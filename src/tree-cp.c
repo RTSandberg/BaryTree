@@ -692,6 +692,8 @@ void cleanup(struct tnode *p)
 
     free_vector(orderarr);
 
+    free_vector(tt);
+
     remove_node(p);
     free(p);
 

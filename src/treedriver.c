@@ -78,15 +78,14 @@ void treedriver(struct particles *sources, struct particles *targets,
         pc_create_tree_n0(&troot, sources, 1, sources->num,
                           maxparnode, xyzminmax, level);
         
-        tree_array = malloc(sizeof(struct tnode_array));
-        tree_array->numnodes = numnodes;
-        make_vector(tree_array->ibeg, numnodes);
-        make_vector(tree_array->iend, numnodes);
-        make_vector(tree_array->x_mid, numnodes);
-        make_vector(tree_array->y_mid, numnodes);
-        make_vector(tree_array->z_mid, numnodes);
-
-        pc_create_tree_array(troot, tree_array);
+        //tree_array = malloc(sizeof(struct tnode_array));
+        //tree_array->numnodes = numnodes;
+        //make_vector(tree_array->ibeg, numnodes);
+        //make_vector(tree_array->iend, numnodes);
+        //make_vector(tree_array->x_mid, numnodes);
+        //make_vector(tree_array->y_mid, numnodes);
+        //make_vector(tree_array->z_mid, numnodes);
+        //pc_create_tree_array(troot, tree_array);
 
         setup_batch(&batches, batch_lim, targets, batch_size);
         create_target_batch(batches, targets, 1, targets->num,
@@ -155,6 +154,13 @@ void treedriver(struct particles *sources, struct particles *targets,
     printf("Deallocating tree structure... \n\n");
 
     cleanup(troot);
+    
+    free_vector(batches->reorder);
+    free_matrix(batches->index);
+    free_matrix(batches->center);
+    free_vector(batches->radius);
+    free(batches);
+    
 
     return;
 
