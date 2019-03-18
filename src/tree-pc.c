@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 
 #include "array.h"
 #include "globvars.h"
@@ -326,6 +327,9 @@ void compute_pc(struct tnode *p,
      
         if (p->exist_ms == 0) {
             make_matrix(p->mms, 8, torder3);
+            make_vector(p->tx, torderlim);
+            make_vector(p->ty, torderlim);
+            make_vector(p->tz, torderlim);
             
             for (j = 0; j < 8; j++) {
                 for (i = 0; i < torder3; i++) {
@@ -438,18 +442,21 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
 
     int i, j, k1, k2, k3, kk;
     int a1exactind, a2exactind, a3exactind;
-    double dx, dy, dz, qloc;
+    double dx, dy, dz;
     double x0, x1, y0, y1, z0, z1;
-    double sumA1, sumA2, sumA3, sumB4, sumB5, sumB6, sumB7, sumB8;
+    double sumA1, sumA2, sumA3;
     double temp11, temp12, temp21, temp22;
-    double xx, yy, zz;
+    double xx, yy, zz, qq;
     double *xibeg, *yibeg, *zibeg, *qibeg;
     
-    double dj[torderlim];
-    double *Dd, **a1i, **a2j, **a3k, **b1i, **b2j, **b3k;
-    
-    double tx[torderlim], ty[torderlim], tz[torderlim];
+    double Dd, dj[torderlim];
+    double a1i[torderlim], a2j[torderlim], a3k[torderlim];
+    double b1i[torderlim], b2j[torderlim], b3k[torderlim];
     double wx[torderlim], wy[torderlim], wz[torderlim];
+    
+    double sum1[torder3],sum2[torder3],sum3[torder3];
+    double sum4[torder3],sum5[torder3],sum6[torder3];
+    double sum7[torder3],sum8[torder3];
     
     xibeg = &(x[p->ibeg-1]);
     yibeg = &(y[p->ibeg-1]);
@@ -463,39 +470,31 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
     z0 = p->z_min;
     z1 = p->z_max;
     
+    for (i = 0; i < torder3; i++) {
+        sum1[i] = 0.0;
+        sum2[i] = 0.0;
+        sum3[i] = 0.0;
+        sum4[i] = 0.0;
+        sum5[i] = 0.0;
+        sum6[i] = 0.0;
+        sum7[i] = 0.0;
+        sum8[i] = 0.0;
+    }
+    
     for (i = 0; i < torderlim; i++) {
-        tx[i] = x0 + (tt[i] + 1.0)/2.0 * (x1 - x0);
-        ty[i] = y0 + (tt[i] + 1.0)/2.0 * (y1 - y0);
-        tz[i] = z0 + (tt[i] + 1.0)/2.0 * (z1 - z0);
+        p->tx[i] = x0 + (tt[i] + 1.0)/2.0 * (x1 - x0);
+        p->ty[i] = y0 + (tt[i] + 1.0)/2.0 * (y1 - y0);
+        p->tz[i] = z0 + (tt[i] + 1.0)/2.0 * (z1 - z0);
         
         wx[i] = -4.0 * ww[i] / (x1 - x0);
         wy[i] = -4.0 * ww[i] / (y1 - y0);
         wz[i] = -4.0 * ww[i] / (z1 - z0);
+        
+        dj[i] = 1.0;
     }
-    
-    make_matrix(a1i, torderlim, p->numpar);
-    make_matrix(a2j, torderlim, p->numpar);
-    make_matrix(a3k, torderlim, p->numpar);
-    make_matrix(b1i, torderlim, p->numpar);
-    make_matrix(b2j, torderlim, p->numpar);
-    make_matrix(b3k, torderlim, p->numpar);
-    make_vector(Dd, p->numpar);
     
     dj[0] = 0.25;
     dj[torder] = 0.25;
-    for (j = 1; j < torder; j++)
-        dj[j] = 1.0;
-    
-    //dj[0] = 0.5;
-    //dj[torder] = 0.5;
-    //for (j = 1; j < torder; j++)
-    //    dj[j] = 1.0;
-    
-    //for (j = 0; j < torderlim; j++) {
-        //w1i[j] = ((j % 2 == 0)? 1 : -1) * dj[j];
-        //w2j[j] = w1i[j];
-        //w3k[j] = w1i[j];
-    //}
     
     for (i = 0; i < p->numpar; i++) {
     
@@ -506,6 +505,7 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
         xx = xibeg[i];
         yy = yibeg[i];
         zz = zibeg[i];
+        qq = qibeg[i];
         
         //a1exactind = -1;
         //a2exactind = -1;
@@ -516,17 +516,17 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
             dy = yy - p->ty[j];
             dz = zz - p->tz[j];
             
-            a1i[j][i] = p->wx[j]/dx + dj[j]/(dx*dx);
-            a2j[j][i] = p->wy[j]/dy + dj[j]/(dy*dy);
-            a3k[j][i] = p->wz[j]/dz + dj[j]/(dz*dz);
+            a1i[j] = wx[j]/dx + dj[j]/(dx*dx);
+            a2j[j] = wy[j]/dy + dj[j]/(dy*dy);
+            a3k[j] = wz[j]/dz + dj[j]/(dz*dz);
             
-            b1i[j][i] = dj[j]/dx;
-            b2j[j][i] = dj[j]/dy;
-            b3k[j][i] = dj[j]/dz;
+            b1i[j] = dj[j]/dx;
+            b2j[j] = dj[j]/dy;
+            b3k[j] = dj[j]/dz;
             
-            sumA1 += a1i[j][i];
-            sumA2 += a2j[j][i];
-            sumA3 += a3k[j][i];
+            sumA1 += a1i[j];
+            sumA2 += a2j[j];
+            sumA3 += a3k[j];
             
             //if (fabs(xx - p->tx[j]) < DBL_MIN) a1exactind = j;
             //if (fabs(yy - p->ty[j]) < DBL_MIN) a2exactind = j;
@@ -553,62 +553,49 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
         }
  */
  
-        Dd[i] = 1.0 / (sumA1 * sumA2 * sumA3) * qibeg[i];
-    }
+        Dd = 1.0 / (sumA1 * sumA2 * sumA3) * qq;
     
-    kk = -1;
-    for (k3 = 0; k3 < torderlim; k3++) {
-        for (k2 = 0; k2 < torderlim; k2++) {
-            for (k1 = 0; k1 < torderlim; k1++) {
-                kk++;
+        kk = -1;
+        for (k3 = 0; k3 < torderlim; k3++) {
+            for (k2 = 0; k2 < torderlim; k2++) {
+                for (k1 = 0; k1 < torderlim; k1++) {
+                    kk++;
                 
-                sumA1 = 0.0;
-                sumA2 = 0.0;
-                sumA3 = 0.0;
-                sumB4 = 0.0;
-                sumB5 = 0.0;
-                sumB6 = 0.0;
-                sumB7 = 0.0;
-                sumB8 = 0.0;
-                
-                for (i = 0; i < p->numpar; i++) {
-                
-                    temp11 = a1i[k1][i] * a2j[k2][i] * Dd[i];
-                    temp21 = b1i[k1][i] * a2j[k2][i] * Dd[i];
-                    temp12 = a1i[k1][i] * b2j[k2][i] * Dd[i];
-                    temp22 = b1i[k1][i] * b2j[k2][i] * Dd[i];
+                    temp11 = a1i[k1] * a2j[k2] * Dd;
+                    temp21 = b1i[k1] * a2j[k2] * Dd;
+                    temp12 = a1i[k1] * b2j[k2] * Dd;
+                    temp22 = b1i[k1] * b2j[k2] * Dd;
                     
-                    sumA1 += temp11 * a3k[k3][i];
-                    sumA2 += temp21 * a3k[k3][i];
-                    sumA3 += temp12 * a3k[k3][i];
-                    sumB4 += temp11 * b3k[k3][i];
-                    sumB5 += temp22 * a3k[k3][i];
-                    sumB6 += temp12 * b3k[k3][i];
-                    sumB7 += temp21 * b3k[k3][i];
-                    sumB8 += temp22 * b3k[k3][i];
-                    
+//                    p->mms[0][kk] += temp11 * a3k[k3];
+//                    p->mms[1][kk] += temp21 * a3k[k3];
+//                    p->mms[2][kk] += temp12 * a3k[k3];
+//                    p->mms[3][kk] += temp11 * b3k[k3];
+//                    p->mms[4][kk] += temp22 * a3k[k3];
+//                    p->mms[5][kk] += temp12 * b3k[k3];
+//                    p->mms[6][kk] += temp21 * b3k[k3];
+//                    p->mms[7][kk] += temp22 * b3k[k3];
+
+                    sum1[kk] += temp11 * a3k[k3];
+                    sum2[kk] += temp21 * a3k[k3];
+                    sum3[kk] += temp12 * a3k[k3];
+                    sum4[kk] += temp11 * b3k[k3];
+                    sum5[kk] += temp22 * a3k[k3];
+                    sum6[kk] += temp12 * b3k[k3];
+                    sum7[kk] += temp21 * b3k[k3];
+                    sum8[kk] += temp22 * b3k[k3];
                 }
-                
-                p->mms[0][kk] = sumA1;
-                p->mms[1][kk] = sumA2;
-                p->mms[2][kk] = sumA3;
-                p->mms[3][kk] = sumB4;
-                p->mms[4][kk] = sumB5;
-                p->mms[5][kk] = sumB6;
-                p->mms[6][kk] = sumB7;
-                p->mms[7][kk] = sumB8;
-                
             }
         }
     }
     
-    free_matrix(a1i);
-    free_matrix(a2j);
-    free_matrix(a3k);
-    free_matrix(b1i);
-    free_matrix(b2j);
-    free_matrix(b3k);
-    free_vector(Dd);
+    memcpy(p->mms[0],sum1,torder3*sizeof(double));
+    memcpy(p->mms[1],sum2,torder3*sizeof(double));
+    memcpy(p->mms[2],sum3,torder3*sizeof(double));
+    memcpy(p->mms[3],sum4,torder3*sizeof(double));
+    memcpy(p->mms[4],sum5,torder3*sizeof(double));
+    memcpy(p->mms[5],sum6,torder3*sizeof(double));
+    memcpy(p->mms[6],sum7,torder3*sizeof(double));
+    memcpy(p->mms[7],sum8,torder3*sizeof(double));
     
     return;
     
