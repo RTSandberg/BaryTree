@@ -565,15 +565,6 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
                     temp21 = b1i[k1] * a2j[k2] * Dd;
                     temp12 = a1i[k1] * b2j[k2] * Dd;
                     temp22 = b1i[k1] * b2j[k2] * Dd;
-                    
-//                    p->mms[0][kk] += temp11 * a3k[k3];
-//                    p->mms[1][kk] += temp21 * a3k[k3];
-//                    p->mms[2][kk] += temp12 * a3k[k3];
-//                    p->mms[3][kk] += temp11 * b3k[k3];
-//                    p->mms[4][kk] += temp22 * a3k[k3];
-//                    p->mms[5][kk] += temp12 * b3k[k3];
-//                    p->mms[6][kk] += temp21 * b3k[k3];
-//                    p->mms[7][kk] += temp22 * b3k[k3];
 
                     sum1[kk] += temp11 * a3k[k3];
                     sum2[kk] += temp21 * a3k[k3];
