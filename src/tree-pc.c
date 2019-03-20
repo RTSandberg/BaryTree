@@ -60,12 +60,12 @@ void pc_create_tree_n0(struct tnode **p, struct particles *sources,
     (*p)->numpar = iend - ibeg + 1;
     (*p)->exist_ms = 0;
     
-    (*p)->x_min = minval(sources->x + ibeg - 1, (*p)->numpar) - 1e-10;
-    (*p)->x_max = maxval(sources->x + ibeg - 1, (*p)->numpar) + 1e-10;
-    (*p)->y_min = minval(sources->y + ibeg - 1, (*p)->numpar) - 1e-10;
-    (*p)->y_max = maxval(sources->y + ibeg - 1, (*p)->numpar) + 1e-10;
-    (*p)->z_min = minval(sources->z + ibeg - 1, (*p)->numpar) - 1e-10;
-    (*p)->z_max = maxval(sources->z + ibeg - 1, (*p)->numpar) + 1e-10;
+    (*p)->x_min = minval(sources->x + ibeg - 1, (*p)->numpar);
+    (*p)->x_max = maxval(sources->x + ibeg - 1, (*p)->numpar);
+    (*p)->y_min = minval(sources->y + ibeg - 1, (*p)->numpar);
+    (*p)->y_max = maxval(sources->y + ibeg - 1, (*p)->numpar);
+    (*p)->z_min = minval(sources->z + ibeg - 1, (*p)->numpar);
+    (*p)->z_max = maxval(sources->z + ibeg - 1, (*p)->numpar);
     
     //(*p)->x_min = xyzmm[0];
     //(*p)->x_max = xyzmm[1];
@@ -507,9 +507,9 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
         zz = zibeg[i];
         qq = qibeg[i];
         
-        //a1exactind = -1;
-        //a2exactind = -1;
-        //a3exactind = -1;
+        a1exactind = -1;
+        a2exactind = -1;
+        a3exactind = -1;
         
         for (j = 0; j < torderlim; j++) {
             dx = xx - p->tx[j];
@@ -528,30 +528,39 @@ void pc_comp_ms(struct tnode *p, double *x, double *y, double *z, double *q)
             sumA2 += a2j[j];
             sumA3 += a3k[j];
             
-            //if (fabs(xx - p->tx[j]) < DBL_MIN) a1exactind = j;
-            //if (fabs(yy - p->ty[j]) < DBL_MIN) a2exactind = j;
-            //if (fabs(zz - p->tz[j]) < DBL_MIN) a3exactind = j;
+            if (fabs(xx - p->tx[j]) < DBL_MIN) a1exactind = j;
+            if (fabs(yy - p->ty[j]) < DBL_MIN) a2exactind = j;
+            if (fabs(zz - p->tz[j]) < DBL_MIN) a3exactind = j;
         }
 
-/*
+
         if (a1exactind > -1) {
             sumA1 = 1.0;
-            for (j = 0; j < torderlim; j++) a1i[j][i] = 0.0;
-            a1i[a1exactind][i] = 1.0;
+            for (j = 0; j < torderlim; j++) {
+                a1i[j] = 0.0;
+                b1i[j] = 0.0;
+            }
+            a1i[a1exactind] = 1.0;
         }
         
         if (a2exactind > -1) {
             sumA2 = 1.0;
-            for (j = 0; j < torderlim; j++) a2j[j][i] = 0.0;
-            a2j[a2exactind][i] = 1.0;
+            for (j = 0; j < torderlim; j++) {
+                a2j[j] = 0.0;
+                b2j[j] = 0.0;
+            }
+            a2j[a2exactind] = 1.0;
         }
         
         if (a3exactind > -1) {
             sumA3 = 1.0;
-            for (j = 0; j < torderlim; j++) a3k[j][i] = 0.0;
-            a3k[a3exactind][i] = 1.0;
+            for (j = 0; j < torderlim; j++) {
+                a3k[j] = 0.0;
+                b3k[j] = 0.0;
+            }
+            a3k[a3exactind] = 1.0;
         }
- */
+
  
         Dd = 1.0 / (sumA1 * sumA2 * sumA3) * qq;
     
