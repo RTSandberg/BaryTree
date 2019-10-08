@@ -60,7 +60,7 @@ int main(int argc, char **argv)
         printf("        numparsT:  number of targets \n");
         printf("           theta:  multipole acceptance criterion \n");
         printf("           order:  number of Chebyshev interp. pts per Cartesian direction \n");
-//        printf("     tree_type:  0--cluster-particle, 1--particle-cluster \n");
+//        printf("       tree_type:  0--cluster-particle, 1--particle-cluster \n");
         printf("      maxparnode:  maximum particles in leaf \n");
         printf("      batch size:  maximum size of target batch \n");
         printf(" pot/approx type:  0--Coulomb, Lagrange approx.\n");           
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
     numparsT = atoi(argv[6]);
     theta = atof(argv[7]);
     order = atoi(argv[8]);
-    tree_type = 1;
+    tree_type = 0;
     maxparnode = atoi(argv[9]);
     batch_size = atoi(argv[10]);
     pot_type = atoi(argv[11]);

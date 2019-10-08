@@ -203,7 +203,7 @@ void treedriver(struct particles *sources, struct particles *targets,
             cp_compute_tree_interactions(tree_array, clusters, targets,
                                          tpeng, tEn, numThreads, numThreads);
                                          
-            reorder_energies(orderarr, targets->num, tEn);
+            //reorder_energies(orderarr, targets->num, tEn);
         }
     
 

@@ -562,7 +562,7 @@ void cp_fill_cluster_interp(struct particles *clusters, struct particles *target
         int targetNum = targets->num;
 
 #pragma acc data copyin(tt[0:torderlim], \
-        xT[0:targetNum], yT[0:targetNum], zT[0:targetNum], qT[0:targetNum] \
+        xT[0:targetNum], yT[0:targetNum], zT[0:targetNum], qT[0:targetNum]) \
         copy(tempX[0:clusterNum], tempY[0:clusterNum], tempZ[0:clusterNum])
         {
             #pragma omp for schedule(guided)
@@ -708,7 +708,7 @@ void cp_interaction_list_treecode(struct tnode_array *tree_array, struct particl
     #pragma acc data copyin(xS[0:sources->num], yS[0:sources->num], zS[0:sources->num], \
                             qS[0:sources->num], wS[0:sources->num], \
                             xT[0:targets->num], yT[0:targets->num], zT[0:targets->num], qT[0:targets->num], \
-                            xC[0:clusters->num], yC[0:clusters->num], zC[0:clusters->num] \
+                            xC[0:clusters->num], yC[0:clusters->num], zC[0:clusters->num]) \
                             copy(qC[0:clusters->num], EnP[0:targets->num])
         {
 
@@ -795,7 +795,7 @@ void cp_interaction_list_treecode(struct tnode_array *tree_array, struct particl
                     }
 
                     #pragma acc atomic
-                    EnP[jj] += d_peng;
+                    EnP[ii] += d_peng;
                 }
                 } // end kernel
             } // end loop over number of leaves
@@ -849,7 +849,7 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
     int clusterNum = clusters->num;
     int targetNum = targets->num;
 
-    #pragma acc data copyin(tt[0:torderlim], xT[0:targetNum], yT[0:targetNum], zT[0:targetNum], qC[0:clusterNum] \
+    #pragma acc data copyin(tt[0:torderlim], xT[0:targetNum], yT[0:targetNum], zT[0:targetNum], qC[0:clusterNum]) \
                             copy(EnP[0:targetNum])
     {
 
@@ -878,6 +878,9 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
         double z0 = tree_array->z_min[idx];
         double z1 = tree_array->z_max[idx];
         
+        make_vector(exactIndX, pointsInNode);
+        make_vector(exactIndY, pointsInNode);
+        make_vector(exactIndZ, pointsInNode);
 
         int streamID = rand() % 4;
         #pragma acc kernels async(streamID) present(xT, yT, zT, qC, tt) \
@@ -995,8 +998,12 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
             
             #pragma acc atomic
             EnP[i] += temp;
-        }
+        }        
         } //end ACC kernels
+        
+        free_vector(exactIndX);
+        free_vector(exactIndY);
+        free_vector(exactIndZ);
     } //end loop over nodes
     } //end ACC data region
     } //end OMP parallel region
