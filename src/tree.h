@@ -25,7 +25,6 @@ void fill_in_cluster_data_hermite(struct particles *clusters, struct particles *
 void addNodeToArray_hermite(struct tnode *p, struct particles *sources, struct particles *clusters, int order, int numInterpPoints, int pointsPerCluster);
 void addNodeToArray_hermite_SS(struct tnode *p, struct particles *sources, struct particles *clusters, int order, int numInterpPoints, int pointsPerCluster);
 void addNodeToArray_SS(struct tnode *p, struct particles *sources, struct particles *clusters, int order, int numInterpPoints, int pointsPerCluster);
-void comp_tcoeff(double dx, double dy, double dz);
 
 
 /* used by cluster-particle and particle-cluster Yukawa */
@@ -53,16 +52,33 @@ void compute_cp2(struct tnode *ap, double *x, double *y, double *z,
 
 
 /* used by cluster-particle Coulomb */
-void cp_treecode(struct tnode *p, struct batch *batches,
-                 struct particles *sources, struct particles *targets,
-                 double *tpeng, double *EnP, double *timetree);
+void cp_interaction_list_treecode(struct tnode_array *tree_array, struct particles *clusters, struct batch *batches,
+int *tree_inter_list, int *direct_inter_list,
+struct particles *sources, struct particles *targets,
+double *tpeng, double *EnP, int numDevices, int numThreads);
 
-void compute_cp1(struct tnode *p, double *EnP,
-                 double *x, double *y, double *z);
+int cp_set_tree_index(struct tnode *p, int index);
 
-void cp_comp_direct(double *EnP, int ibeg, int iend,
-                    double *x, double *y, double *z);
+void cp_create_tree_array(struct tnode *p, struct tnode_array *tree_array);
 
+void cp_make_interaction_list(const struct tnode_array *tree_array, struct batch *batches,
+int *tree_inter_list, int *direct_inter_list);
+
+void cp_compute_interaction_list(int tree_numnodes, const int *tree_level,
+const int *tree_numpar, const double *tree_radius,
+const double *tree_x_mid, const double *tree_y_mid, const double *tree_z_mid,
+int *batch_ind, double *batch_mid, double batch_rad,
+int *batch_tree_list, int *batch_direct_list);
+
+void cp_fill_cluster_interp(struct particles *clusters, struct particles *targets, struct tnode *troot, int order, int numDevices, int numThreads, struct tnode_array *tree_array);
+
+void cp_comp_interp(struct tnode_array *tree_array, int idx,
+double *xT, double *yT, double *zT, double *qT,
+double *clusterX, double *clusterY, double *clusterZ);
+
+void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particles *clusters,
+struct particles *targets, double *tpeng, double *EnP,
+int numDevices, int numThreads);
 
 /* used by cluster-particle Yukawa */
 void cp_treecode_yuk(struct tnode *p, struct batch *batches,

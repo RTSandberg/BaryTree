@@ -52,8 +52,50 @@ void treedriver(struct particles *sources, struct particles *targets,
 
     /* call setup to allocate arrays for Taylor expansions and setup global vars */
     if (tree_type == 0) {
-        fprintf(stderr, "ERROR: Cluster-particle treecode currently disabled.\n");
-        exit(1);
+//        fprintf(stderr, "ERROR: Cluster-particle treecode currently disabled.\n");
+//        exit(1);
+        
+        setup(targets, order, theta, xyzminmax);
+        
+        #pragma omp parallel
+        {
+            #pragma omp single
+            {
+                cp_create_tree_n0(&troot, targets, 1, targets->num,
+                                  maxparnode, xyzminmax, level);
+            }
+        }
+        
+        int final_index = cp_set_tree_index(troot, 0);
+        
+        tree_array = malloc(sizeof(struct tnode_array));
+        tree_array->numnodes = numnodes;
+        make_vector(tree_array->ibeg, numnodes);
+        make_vector(tree_array->iend, numnodes);
+        make_vector(tree_array->numpar, numnodes);
+        make_vector(tree_array->x_mid, numnodes);
+        make_vector(tree_array->y_mid, numnodes);
+        make_vector(tree_array->z_mid, numnodes);
+        make_vector(tree_array->x_min, numnodes);
+
+        make_vector(tree_array->y_min, numnodes);
+        make_vector(tree_array->z_min, numnodes);
+        make_vector(tree_array->x_max, numnodes);
+        make_vector(tree_array->y_max, numnodes);
+        make_vector(tree_array->z_max, numnodes);
+        make_vector(tree_array->level, numnodes);
+        make_vector(tree_array->cluster_ind, numnodes);
+        make_vector(tree_array->radius, numnodes);
+
+        cp_create_tree_array(troot, tree_array);
+        setup_batch(&batches, batch_lim, sources, batch_size);
+        create_source_batch(batches, sources, 1, sources->num, batch_size, batch_lim);
+        
+        if ((pot_type == 0) || (pot_type == 1)) {
+            cp_fill_cluster_interp(clusters, targets, troot, order,
+                                 numThreads, numThreads, tree_array);
+        }
+        
         
     } else if (tree_type == 1) {
         setup(sources, order, theta, xyzminmax);
@@ -145,14 +187,31 @@ void treedriver(struct particles *sources, struct particles *targets,
     time1 = omp_get_wtime();
     
     if (tree_type == 0) {
-        fprintf(stderr, "ERROR: Cluster-particle treecode is currently not enabled.\n");
-        exit(1);
+//        fprintf(stderr, "ERROR: Cluster-particle treecode is currently not enabled.\n");
+//        exit(1);
+
+        make_vector(tree_inter_list, batches->num * numnodes);
+        make_vector(direct_inter_list, batches->num * numleaves);
+
+        cp_make_interaction_list(tree_array, batches, tree_inter_list, direct_inter_list);
+        
+        if (pot_type == 0) {
+            cp_interaction_list_treecode(tree_array, clusters, batches,
+                                         tree_inter_list, direct_inter_list, sources, targets,
+                                         tpeng, tEn, numThreads, numThreads);
+                                         
+            cp_compute_tree_interactions(tree_array, clusters, targets,
+                                         tpeng, tEn, numThreads, numThreads);
+                                         
+            reorder_energies(orderarr, targets->num, tEn);
+        }
+    
 
     } else if (tree_type == 1) {
         make_vector(tree_inter_list, batches->num * numnodes);
         make_vector(direct_inter_list, batches->num * numleaves);
 
-        pc_make_interaction_list(tree_array, batches, tree_inter_list,  direct_inter_list);
+        pc_make_interaction_list(tree_array, batches, tree_inter_list, direct_inter_list);
 
         if (pot_type == 0) {
             if (verbosity > 0) printf("Entering particle-cluster, pot_type=0 (Coulomb).\n");
