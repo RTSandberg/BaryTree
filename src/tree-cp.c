@@ -116,7 +116,6 @@ void cp_create_tree_n0(struct tnode **p, struct particles *targets,
                        int ibeg, int iend, int maxparnode,
                        double *xyzmm, int level)
 {
-	printf("Entering cp_create_tree_n0.\n");
     /*local variables*/
     double x_mid, y_mid, z_mid, xl, yl, zl, lmax, t1, t2, t3;
     int i, j, loclev, numposchild, idx;
@@ -262,7 +261,6 @@ void cp_create_tree_n0(struct tnode **p, struct particles *targets,
         }
     }
     
-    printf("Exiting cp_create_tree_n0.\n");
     return;
 
 } /* end of function create_tree_n0 */
@@ -947,9 +945,9 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
             }
 
             denominator = 1.0;
-            if (exactIndX[i]==-1) denominator *= sumX;
-            if (exactIndY[i]==-1) denominator *= sumY;
-            if (exactIndZ[i]==-1) denominator *= sumZ;
+            if (exactIndX[i]==-1) denominator /= sumX;
+            if (exactIndY[i]==-1) denominator /= sumY;
+            if (exactIndZ[i]==-1) denominator /= sumZ;
             
             temp = 0.0;
             
@@ -997,7 +995,7 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
             }
             
             #pragma acc atomic
-            EnP[i] += temp;
+            EnP[i+startingIndexInTargets] += temp;
         }        
         } //end ACC kernels
         
