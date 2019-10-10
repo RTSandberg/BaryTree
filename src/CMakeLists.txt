@@ -16,6 +16,7 @@ SET(SRCS_TREEDRIVER
     tree-pc-hermite-dcf.c
     tree-pc-tcf.c
     tree-batch.c
+    tree-batch-interp.c
     xmalloc.c
     sort.c 
     tnode.h

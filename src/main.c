@@ -84,7 +84,7 @@ int main(int argc, char **argv)
     numparsT = atoi(argv[6]);
     theta = atof(argv[7]);
     order = atoi(argv[8]);
-    tree_type = 0;
+    tree_type = 2; //cluster batch!!!
     maxparnode = atoi(argv[9]);
     batch_size = atoi(argv[10]);
     pot_type = atoi(argv[11]);

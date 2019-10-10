@@ -48,6 +48,8 @@ void treedriver(struct particles *sources, struct particles *targets,
     struct tnode_array *tree_array = NULL;
     numnodes = 0;
     struct particles *clusters = NULL;
+    struct particles *target_clusters = NULL;
+    
     clusters = malloc(sizeof(struct particles));
 
     /* call setup to allocate arrays for Taylor expansions and setup global vars */
@@ -96,6 +98,55 @@ void treedriver(struct particles *sources, struct particles *targets,
                                  numThreads, numThreads, tree_array);
         }
         
+    } else if (tree_type == 2) {
+        
+        target_clusters = malloc(sizeof(struct particles));
+        
+        setup(sources, order, theta, xyzminmax);
+        
+        #pragma omp parallel
+        {
+            #pragma omp single
+            {
+                pc_create_tree_n0(&troot, sources, 1, sources->num,
+                                  maxparnode, xyzminmax, level);
+            }
+        }
+
+        int final_index = pc_set_tree_index(troot, 0);
+        
+        tree_array = malloc(sizeof(struct tnode_array));
+        tree_array->numnodes = numnodes;
+        make_vector(tree_array->ibeg, numnodes);
+        make_vector(tree_array->iend, numnodes);
+        make_vector(tree_array->numpar, numnodes);
+        make_vector(tree_array->x_mid, numnodes);
+        make_vector(tree_array->y_mid, numnodes);
+        make_vector(tree_array->z_mid, numnodes);
+        make_vector(tree_array->x_min, numnodes);
+
+        make_vector(tree_array->y_min, numnodes);
+        make_vector(tree_array->z_min, numnodes);
+        make_vector(tree_array->x_max, numnodes);
+        make_vector(tree_array->y_max, numnodes);
+        make_vector(tree_array->z_max, numnodes);
+        make_vector(tree_array->level, numnodes);
+        make_vector(tree_array->cluster_ind, numnodes);
+        make_vector(tree_array->radius, numnodes);
+
+        pc_create_tree_array(troot, tree_array);
+        setup_batch(&batches, batch_lim, targets, batch_size);
+        create_target_batch(batches, targets, 1, targets->num,batch_size, batch_lim);
+
+
+        if  (pot_type == 0) {
+            fill_in_cluster_data(clusters, sources, troot, order,
+                                 numThreads, numThreads, tree_array);
+
+            cc_fill_cluster_batch_interp(target_clusters, targets, batches, order,
+                                 numThreads, numThreads);
+        }
+    
         
     } else if (tree_type == 1) {
         setup(sources, order, theta, xyzminmax);
@@ -205,7 +256,27 @@ void treedriver(struct particles *sources, struct particles *targets,
                                          
             //reorder_energies(orderarr, targets->num, tEn);
         }
-    
+        
+        
+    } else if (tree_type == 2) {
+        make_vector(tree_inter_list, batches->num * numnodes);
+        make_vector(direct_inter_list, batches->num * numleaves);
+
+        pc_make_interaction_list(tree_array, batches, tree_inter_list, direct_inter_list);
+
+        if (pot_type == 0) {
+            cc_interaction_list_treecode(tree_array, clusters, target_clusters, batches,
+                                         tree_inter_list, direct_inter_list, sources, targets,
+                                         tpeng, tEn, numThreads, numThreads);
+                                         
+            cc_compute_batch_interp_interactions(batches, target_clusters, targets,
+                                         tpeng, tEn, numThreads, numThreads);
+        }
+        
+        reorder_energies(batches->reorder, targets->num, tEn);
+        
+        
+                                         
 
     } else if (tree_type == 1) {
         make_vector(tree_inter_list, batches->num * numnodes);
@@ -297,7 +368,25 @@ void treedriver(struct particles *sources, struct particles *targets,
     free_matrix(batches->index);
     free_matrix(batches->center);
     free_vector(batches->radius);
+    free_vector(batches->x_min);
+    free_vector(batches->y_min);
+    free_vector(batches->z_min);
+    free_vector(batches->x_max);
+    free_vector(batches->y_max);
+    free_vector(batches->z_max);
     free(batches);
+    
+    
+    // free clusters
+    if (tree_type == 2) {
+        free_vector(target_clusters->x);
+        free_vector(target_clusters->y);
+        free_vector(target_clusters->z);
+        free_vector(target_clusters->q);
+        free_vector(target_clusters->w);
+        free(target_clusters);
+    }
+    
 
     time2 = omp_get_wtime();
     timetree[2] = time2-time1;

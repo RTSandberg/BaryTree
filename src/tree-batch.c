@@ -41,6 +41,14 @@ void setup_batch(struct batch **batches, double *batch_lim,
     make_matrix((*batches)->index, max_batch_num, 4);
     make_matrix((*batches)->center, max_batch_num, 3);
     make_vector((*batches)->radius, max_batch_num);
+    
+    make_vector((*batches)->x_min, max_batch_num);
+    make_vector((*batches)->y_min, max_batch_num);
+    make_vector((*batches)->z_min, max_batch_num);
+    
+    make_vector((*batches)->x_max, max_batch_num);
+    make_vector((*batches)->y_max, max_batch_num);
+    make_vector((*batches)->z_max, max_batch_num);
 
     for (i = 0; i < particles->num; i++)
         (*batches)->reorder[i] = i+1;
@@ -170,6 +178,14 @@ void create_target_batch(struct batch *batches, struct particles *particles,
         
         batches->radius[batches->num-1] = radius;
 //    	printf("Finished filling in batch details.\n");
+
+        batches->x_min[batches->num-1] = x_min;
+        batches->y_min[batches->num-1] = y_min;
+        batches->z_min[batches->num-1] = z_min;
+        
+        batches->x_max[batches->num-1] = x_max;
+        batches->y_max[batches->num-1] = y_max;
+        batches->z_max[batches->num-1] = z_max;
     }
 
     return;

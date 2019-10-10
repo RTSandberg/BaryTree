@@ -80,6 +80,24 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
 struct particles *targets, double *tpeng, double *EnP,
 int numDevices, int numThreads);
 
+
+/*used by cluster-batch*/
+void cc_fill_cluster_batch_interp(struct particles *target_clusters, struct particles *targets, struct batch *batches, int order, int numDevices, int numThreads);
+
+void cc_comp_batch_interp(struct batch *batches, int idx,
+double *xT, double *yT, double *zT, double *qT,
+double *clusterX, double *clusterY, double *clusterZ);
+
+void cc_interaction_list_treecode(struct tnode_array *tree_array, struct particles *source_clusters, struct particles *target_clusters, struct batch *batches,
+int *tree_inter_list, int *direct_inter_list,
+struct particles *sources, struct particles *targets,
+double *tpeng, double *EnP, int numDevices, int numThreads);
+
+void cc_compute_batch_interp_interactions(struct batch *batches, struct particles *target_clusters,
+struct particles *targets, double *tpeng, double *EnP,
+int numDevices, int numThreads);
+
+
 /* used by cluster-particle Yukawa */
 void cp_treecode_yuk(struct tnode *p, struct batch *batches,
                      struct particles *sources, struct particles *targets,
