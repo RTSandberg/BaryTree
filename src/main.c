@@ -58,9 +58,9 @@ int main(int argc, char **argv)
         printf("      csv output:  results summary to CSV file \n");
         printf("        numparsS:  number of sources \n");
         printf("        numparsT:  number of targets \n");
+        printf("       tree_type:  0--cluster-particle, 1--particle-cluster, 2--cluster-batch \n");
         printf("           theta:  multipole acceptance criterion \n");
         printf("           order:  number of Chebyshev interp. pts per Cartesian direction \n");
-        printf("       tree_type:  0--cluster-particle, 1--particle-cluster, 2--cluster-batch \n");
         printf("      maxparnode:  maximum particles in leaf \n");
         printf("      batch size:  maximum size of target batch \n");
         printf(" pot/approx type:  0--Coulomb, Lagrange approx.\n");           
