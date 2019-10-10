@@ -247,12 +247,21 @@ void treedriver(struct particles *sources, struct particles *targets,
         cp_make_interaction_list(tree_array, batches, tree_inter_list, direct_inter_list);
         
         if (pot_type == 0) {
+        
+            double timet1 = omp_get_wtime();
+            
             cp_interaction_list_treecode(tree_array, clusters, batches,
                                          tree_inter_list, direct_inter_list, sources, targets,
                                          tpeng, tEn, numThreads, numThreads);
                                          
+            double timet2 = omp_get_wtime();
+                                         
             cp_compute_tree_interactions(tree_array, clusters, targets,
                                          tpeng, tEn, numThreads, numThreads);
+                                         
+            double timet3 = omp_get_wtime();
+            timetree[1] = timet2 - timet1;
+            timetree[2] = timet3 - timet2;
                                          
             //reorder_energies(orderarr, targets->num, tEn);
         }
@@ -265,12 +274,22 @@ void treedriver(struct particles *sources, struct particles *targets,
         pc_make_interaction_list(tree_array, batches, tree_inter_list, direct_inter_list);
 
         if (pot_type == 0) {
+        
+            double timet1 = omp_get_wtime();
+            
             cc_interaction_list_treecode(tree_array, clusters, target_clusters, batches,
                                          tree_inter_list, direct_inter_list, sources, targets,
                                          tpeng, tEn, numThreads, numThreads);
                                          
+            double timet2 = omp_get_wtime();
+                                         
             cc_compute_batch_interp_interactions(batches, target_clusters, targets,
                                          tpeng, tEn, numThreads, numThreads);
+                                         
+            double timet3 = omp_get_wtime();
+            timetree[1] = timet2 - timet1;
+            timetree[2] = timet3 - timet2;
+            
         }
         
         reorder_energies(batches->reorder, targets->num, tEn);
@@ -389,7 +408,7 @@ void treedriver(struct particles *sources, struct particles *targets,
     
 
     time2 = omp_get_wtime();
-    timetree[2] = time2-time1;
+    timetree[4] = time2-time1;
 
     return;
 

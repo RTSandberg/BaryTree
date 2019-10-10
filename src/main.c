@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     double tpeng = 0, dpeng = 0;
 
     /* insert variables for date-time calculation? */
-    double time_direct, time_tree[4], time_preproc, time_treedriver;
+    double time_direct, time_tree[5], time_preproc, time_treedriver;
     double time1, time2;
 
     /* input and output files */
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
         printf("        numparsT:  number of targets \n");
         printf("           theta:  multipole acceptance criterion \n");
         printf("           order:  number of Chebyshev interp. pts per Cartesian direction \n");
-//        printf("       tree_type:  0--cluster-particle, 1--particle-cluster \n");
+        printf("       tree_type:  0--cluster-particle, 1--particle-cluster, 2--cluster-batch \n");
         printf("      maxparnode:  maximum particles in leaf \n");
         printf("      batch size:  maximum size of target batch \n");
         printf(" pot/approx type:  0--Coulomb, Lagrange approx.\n");           
@@ -82,14 +82,14 @@ int main(int argc, char **argv)
     sampout = argv[4];
     numparsS = atoi(argv[5]);
     numparsT = atoi(argv[6]);
-    theta = atof(argv[7]);
-    order = atoi(argv[8]);
-    tree_type = 2; //cluster batch!!!
-    maxparnode = atoi(argv[9]);
-    batch_size = atoi(argv[10]);
-    pot_type = atoi(argv[11]);
-    kappa = atof(argv[12]);
-    numThreads = atoi(argv[13]);
+    tree_type = atoi(argv[7]);
+    theta = atof(argv[8]);
+    order = atoi(argv[9]);
+    maxparnode = atoi(argv[10]);
+    batch_size = atoi(argv[11]);
+    pot_type = atoi(argv[12]);
+    kappa = atof(argv[13]);
+    numThreads = atoi(argv[14]);
     
     time1 = omp_get_wtime();
 
@@ -185,7 +185,13 @@ int main(int argc, char **argv)
     printf("|         |\n");
     printf("|         |....Tree setup............  %e s    (%6.2f%)\n", time_tree[0], time_tree[0] * time_percent);
     printf("|         |....Computation...........  %e s    (%6.2f%)\n", time_tree[3], time_tree[3] * time_percent);
-    printf("|         |....Cleanup...............  %e s    (%6.2f%)\n\n", time_tree[2], time_tree[2] * time_percent);
+    if (tree_type == 0 || tree_type == 2) {
+        printf("|              |\n");
+        printf("|              |....Tree compute 1...  %e s    (%6.2f%)\n", time_tree[1], time_tree[1] * time_percent);
+        printf("|              |....Tree compute 2...  %e s    (%6.2f%)\n", time_tree[2], time_tree[2] * time_percent);
+        printf("|         |\n");
+    }
+    printf("|         |....Cleanup...............  %e s    (%6.2f%)\n\n", time_tree[4], time_tree[4] * time_percent);
     
     printf("\nTreecode comparison summary...\n\n");
     printf("   Speedup over reported direct time:  %fx\n\n", time_direct/(time_preproc+time_treedriver));
@@ -233,13 +239,13 @@ int main(int argc, char **argv)
 
     fp = fopen(sampout, "a");
     fprintf(fp, "%s,%s,%s,%d,%d,%f,%d,%d,%d,%d,%f,%d,"
-        "%f,%f,%f,%f,%f,%f,"
+        "%f,%f,%f,%f,%f,%f,%f,%f,"
         "%e,%e,%e,%e,%e,%e,%e,%e,%d\n",
         sampin1, sampin2, sampin3, numparsS, numparsT,
         theta, order, tree_type, maxparnode,batch_size,
         kappa, pot_type, //1 ends
         time_preproc+time_treedriver, time_preproc, time_treedriver, time_tree[0], time_tree[3],
-        time_tree[2], //2 ends
+        time_tree[1], time_tree[2], time_tree[4], //2 ends
         dpeng, tpeng, fabs(tpeng-dpeng), fabs((tpeng-dpeng)/dpeng),
         inferr, relinferr, n2err, reln2err, numThreads); //3 ends
     fclose(fp);
