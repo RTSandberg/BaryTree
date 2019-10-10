@@ -558,6 +558,7 @@ void cp_fill_cluster_interp(struct particles *clusters, struct particles *target
 
         int clusterNum = clusters->num;
         int targetNum = targets->num;
+        int pointsPerCluster = torderlim * torderlim * torderlim;
 
 #pragma acc data copyin(tt[0:torderlim], \
         xT[0:targetNum], yT[0:targetNum], zT[0:targetNum], qT[0:targetNum]) \
@@ -565,19 +566,27 @@ void cp_fill_cluster_interp(struct particles *clusters, struct particles *target
         {
             #pragma omp for schedule(guided)
             for (int i = 1; i < numnodes; i++) {  // start from i=1, don't need to compute root moments
+                int startingIndexInClusters = pointsPerCluster * i;
                 cp_comp_interp(tree_array, i, xT, yT, zT, qT,
                                      tempX, tempY, tempZ);
+                                     
+                for (int j = 0; j < pointsPerCluster; j++)
+                {
+                    clusters->x[startingIndexInClusters + j] = tempX[startingIndexInClusters + j];
+                    clusters->y[startingIndexInClusters + j] = tempY[startingIndexInClusters + j];
+                    clusters->z[startingIndexInClusters + j] = tempZ[startingIndexInClusters + j];
+                }
             }
             #pragma acc wait
         } // end ACC DATA REGION
 
         int counter=0;
-        for (int j = 0; j < clusters->num; j++)
-        {
-            clusters->x[j] = tempX[j];
-            clusters->y[j] = tempY[j];
-            clusters->z[j] = tempZ[j];
-        }
+//        for (int j = 0; j < clusters->num; j++)
+//        {
+//            clusters->x[j] = tempX[j];
+//            clusters->y[j] = tempY[j];
+//            clusters->z[j] = tempZ[j];
+//        }
 
         free_vector(tempX);
         free_vector(tempY);
@@ -620,7 +629,7 @@ void cp_comp_interp(struct tnode_array *tree_array, int idx,
 
     //  Fill in arrays of unique x, y, and z coordinates for the interpolation points.
     #pragma acc loop independent
-    for (i = 0; i < torderlim; i++) {
+    for (int i = 0; i < torderlim; i++) {
         nodeX[i] = x0 + (tt[i] + 1.0)/2.0 * (x1 - x0);
         nodeY[i] = y0 + (tt[i] + 1.0)/2.0 * (y1 - y0);
         nodeZ[i] = z0 + (tt[i] + 1.0)/2.0 * (z1 - z0);
@@ -628,7 +637,7 @@ void cp_comp_interp(struct tnode_array *tree_array, int idx,
 
 
     #pragma acc loop independent
-    for (j = 0; j < pointsPerCluster; j++) { // loop over interpolation points, set (cx,cy,cz) for this point
+    for (int j = 0; j < pointsPerCluster; j++) { // loop over interpolation points, set (cx,cy,cz) for this point
         // compute k1, k2, k3 from j
         k1 = j%torderlim;
         kk = (j-k1)/torderlim;
@@ -762,6 +771,7 @@ void cp_interaction_list_treecode(struct tnode_array *tree_array, struct particl
 
                     }
                     #pragma acc atomic
+                    
                     qC[clusterStart + jj] += tempPotential;
                 }
                 } // end kernel
@@ -995,6 +1005,7 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
             }
             
             #pragma acc atomic
+            #pragma omp atomic
             EnP[i+startingIndexInTargets] += temp;
         }        
         } //end ACC kernels
