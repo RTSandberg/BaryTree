@@ -771,7 +771,6 @@ void cp_interaction_list_treecode(struct tnode_array *tree_array, struct particl
 
                     }
                     #pragma acc atomic
-                    
                     qC[clusterStart + jj] += tempPotential;
                 }
                 } // end kernel
@@ -1004,8 +1003,11 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
                 temp += numerator * denominator * cq;
             }
             
+#ifdef OPENACC_ENABLED
             #pragma acc atomic
+#else
             #pragma omp atomic
+#endif
             EnP[i+startingIndexInTargets] += temp;
         }        
         } //end ACC kernels
