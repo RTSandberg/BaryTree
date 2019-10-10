@@ -232,7 +232,7 @@ void cc_interaction_list_treecode(struct tnode_array *tree_array, struct particl
     #pragma acc data copyin(xS[0:sources->num], yS[0:sources->num], zS[0:sources->num], \
                             qS[0:sources->num], wS[0:sources->num], \
                             xT[0:targets->num], yT[0:targets->num], zT[0:targets->num], qT[0:targets->num], \
-                            xCS[0:source_clusters->num], yCS[0:source_clusters->num], zCS[0:source_clusters->num], qCS[0:source_clusters->num], xCT[0:target_clusters->num], yCT[0:target_clusters->num], zCT[0:target_clusters->num],) \
+                            xCS[0:source_clusters->num], yCS[0:source_clusters->num], zCS[0:source_clusters->num], qCS[0:source_clusters->num], xCT[0:target_clusters->num], yCT[0:target_clusters->num], zCT[0:target_clusters->num]) \
                             copy(qCT[0:target_clusters->num], EnP[0:targets->num])
         {
 
