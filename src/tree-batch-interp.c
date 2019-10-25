@@ -81,24 +81,16 @@ void cc_fill_cluster_batch_interp(struct particles *target_clusters, struct part
                 int startingIndexInClusters = pointsPerCluster * i;
                 cc_comp_batch_interp(batches, i, xT, yT, zT, qT,
                                      tempX, tempY, tempZ);
-                                     
-                for (int j = 0; j < pointsPerCluster; j++)
-                {
-                    target_clusters->x[startingIndexInClusters + j] = tempX[startingIndexInClusters + j];
-                    target_clusters->y[startingIndexInClusters + j] = tempY[startingIndexInClusters + j];
-                    target_clusters->z[startingIndexInClusters + j] = tempZ[startingIndexInClusters + j];
-                }
             }
             #pragma acc wait
         } // end ACC DATA REGION
 
-        int counter=0;
-//        for (int j = 0; j < clusters->num; j++)
-//        {
-//            clusters->x[j] = tempX[j];
-//            clusters->y[j] = tempY[j];
-//            clusters->z[j] = tempZ[j];
-//        }
+        for (int j = 0; j < clusterNum; j++)
+        {
+            if(tempX[j] != 0.0) target_clusters->x[j] = tempX[j];
+            if(tempY[j] != 0.0) target_clusters->y[j] = tempY[j];
+            if(tempZ[j] != 0.0) target_clusters->z[j] = tempZ[j];
+        }
 
         free_vector(tempX);
         free_vector(tempY);
@@ -116,12 +108,10 @@ void cc_comp_batch_interp(struct batch *batches, int idx,
         double *xT, double *yT, double *zT, double *qT,
         double *clusterX, double *clusterY, double *clusterZ)
 {
-    int i,j,k;
     int pointsPerCluster = torderlim*torderlim*torderlim;
     int startingIndexInClusters = idx * pointsPerCluster;
 
     double x0, x1, y0, y1, z0, z1;  // bounding box
-    int k1, k2, k3, kk;
 
     double nodeX[torderlim], nodeY[torderlim], nodeZ[torderlim];
     
@@ -151,11 +141,11 @@ void cc_comp_batch_interp(struct batch *batches, int idx,
     #pragma acc loop independent
     for (int j = 0; j < pointsPerCluster; j++) { // loop over interpolation points, set (cx,cy,cz) for this point
         // compute k1, k2, k3 from j
-        k1 = j%torderlim;
-        kk = (j-k1)/torderlim;
-        k2 = kk%torderlim;
+        int k1 = j%torderlim;
+        int kk = (j-k1)/torderlim;
+        int k2 = kk%torderlim;
         kk = kk - k2;
-        k3 = kk / torderlim;
+        int k3 = kk / torderlim;
 
         // Fill cluster X, Y, and Z arrays
         clusterX[startingIndexInClusters + j] = nodeX[k1];
@@ -184,10 +174,7 @@ void cc_interaction_list_treecode(struct tnode_array *tree_array, struct particl
                                   struct particles *sources, struct particles *targets,
                                   double *tpeng, double *EnP, int numDevices, int numThreads)
 {
-    int i, j;
-
-    for (i = 0; i < targets->num; i++)
-        EnP[i] = 0.0;
+    for (int i = 0; i < targets->num; i++) EnP[i] = 0.0;
 
     printf("Performing cluster-batch treecode...\n");
 
@@ -232,63 +219,47 @@ void cc_interaction_list_treecode(struct tnode_array *tree_array, struct particl
     #pragma acc data copyin(xS[0:sources->num], yS[0:sources->num], zS[0:sources->num], \
                             qS[0:sources->num], wS[0:sources->num], \
                             xT[0:targets->num], yT[0:targets->num], zT[0:targets->num], qT[0:targets->num], \
-                            xCS[0:source_clusters->num], yCS[0:source_clusters->num], zCS[0:source_clusters->num], qCS[0:source_clusters->num], xCT[0:target_clusters->num], yCT[0:target_clusters->num], zCT[0:target_clusters->num]) \
+                            xCS[0:source_clusters->num], yCS[0:source_clusters->num], zCS[0:source_clusters->num], \
+                            qCS[0:source_clusters->num], xCT[0:target_clusters->num], yCT[0:target_clusters->num], \
+                            zCT[0:target_clusters->num]) \
                             copy(qCT[0:target_clusters->num], EnP[0:targets->num])
         {
 
-        int batch_ibeg, batch_iend, node_index;
-        double dist;
-        double tx, ty, tz;
-        int i, j, k, ii, jj;
-        double dxt,dyt,dzt,tempPotential;
-        double temp_i[torderlim], temp_j[torderlim], temp_k[torderlim];
-
-        int target_start, target_end;
-
-        double d_peng, r, xi, yi, zi;
-
-        int numberOfSources, numberOfTargets;
         int numberOfInterpolationPoints = torderlim*torderlim*torderlim;
-        int sourceClusterStart, targetClusterStart, batchStart;
-        
-        int source_start, source_end;
 
-        int numberOfClusterApproximations, numberOfDirectSums;
-        int streamID;
-
-        #pragma omp for private(i,j,ii,jj,batch_ibeg,batch_iend,source_start,source_end,numberOfClusterApproximations,\
-                                numberOfDirectSums,numberOfTargets,batchStart,node_index,sourceClusterStart,targetClusterStart,streamID)
+        #pragma omp for 
         for (int i = 0; i < batches->num; i++) {
-            batch_ibeg = batches->index[i][0];
-            batch_iend = batches->index[i][1];
+            int batch_ibeg = batches->index[i][0];
+            int batch_iend = batches->index[i][1];
             
-            numberOfClusterApproximations = batches->index[i][2];
-            numberOfDirectSums = batches->index[i][3];
+            int numberOfClusterApproximations = batches->index[i][2];
+            int numberOfDirectSums = batches->index[i][3];
 
-            numberOfTargets = batch_iend - batch_ibeg + 1;
-            batchStart =  batch_ibeg - 1;
-            targetClusterStart  = numberOfInterpolationPoints * i;
+            int numberOfTargets = batch_iend - batch_ibeg + 1;
+            int batchStart =  batch_ibeg - 1;
+            int targetClusterStart  = numberOfInterpolationPoints * i;
             
 
             for (int j = 0; j < numberOfClusterApproximations; j++) {
-                node_index = tree_inter_list[i * numnodes + j];
-                sourceClusterStart = numberOfInterpolationPoints*node_index;
+                int node_index = tree_inter_list[i * numnodes + j];
+                int sourceClusterStart = numberOfInterpolationPoints*node_index;
 
-                streamID = j%3;
+                int streamID = j%3;
                 #pragma acc kernels async(streamID)
                 {
                 #pragma acc loop independent
                 for (int jj = 0; jj < numberOfInterpolationPoints; jj++) {
-                    tempPotential = 0.0;
-                    xi = xCT[targetClusterStart + jj];
-                    yi = yCT[targetClusterStart + jj];
-                    zi = zCT[targetClusterStart + jj];
+                    double tempPotential = 0.0;
+                    double xi = xCT[targetClusterStart + jj];
+                    double yi = yCT[targetClusterStart + jj];
+                    double zi = zCT[targetClusterStart + jj];
 
+                    #pragma acc loop reduction(+:tempPotential)
                     for (int ii = 0; ii < numberOfInterpolationPoints; ii++) {
                         // Compute x, y, and z distances between target i and interpolation point j
-                        dxt = xCS[sourceClusterStart + ii] - xi;
-                        dyt = yCS[sourceClusterStart + ii] - yi;
-                        dzt = zCS[sourceClusterStart + ii] - zi;
+                        double dxt = xCS[sourceClusterStart + ii] - xi;
+                        double dyt = yCS[sourceClusterStart + ii] - yi;
+                        double dzt = zCS[sourceClusterStart + ii] - zi;
                         tempPotential += qCS[sourceClusterStart + ii] / sqrt(dxt*dxt + dyt*dyt + dzt*dzt);
 
                     }
@@ -298,25 +269,29 @@ void cc_interaction_list_treecode(struct tnode_array *tree_array, struct particl
                 } // end kernel
             } // end for loop over cluster approximations
 
-            for (j = 0; j < numberOfDirectSums; j++) {
+            for (int j = 0; j < numberOfDirectSums; j++) {
 
-                node_index = direct_inter_list[i * numleaves + j];
+                int node_index = direct_inter_list[i * numleaves + j];
 
-                source_start=ibegs[node_index]-1;
-                source_end=iends[node_index];
+                int source_start=ibegs[node_index]-1;
+                int source_end=iends[node_index];
 
-                streamID = j%3;
+                int streamID = j%3;
                 # pragma acc kernels async(streamID)
                 {
                 #pragma acc loop independent
-                for (ii = batchStart; ii < batchStart+numberOfTargets; ii++) {
-                    d_peng = 0.0;
+                for (int ii = batchStart; ii < batchStart+numberOfTargets; ii++) {
+                    double d_peng = 0.0;
+                    double xtgt = xT[ii];
+                    double ytgt = yT[ii];
+                    double ztgt = zT[ii];
 
-                    for (jj = source_start; jj < source_end; jj++) {
-                        tx = xS[jj] - xT[ii];
-                        ty = yS[jj] - yT[ii];
-                        tz = zS[jj] - zT[ii];
-                        r = sqrt(tx*tx + ty*ty + tz*tz);
+                    #pragma acc loop reduction(+:d_peng)
+                    for (int jj = source_start; jj < source_end; jj++) {
+                        double tx = xS[jj] - xtgt;
+                        double ty = yS[jj] - ytgt;
+                        double tz = zS[jj] - ztgt;
+                        double r = sqrt(tx*tx + ty*ty + tz*tz);
 
                         if (r > DBL_MIN) {
                             d_peng += qS[jj] * wS[jj] / r;
@@ -380,7 +355,7 @@ void cc_compute_batch_interp_interactions(struct batch *batches, struct particle
     int clusterNum = target_clusters->num;
     int targetNum = targets->num;
 
-    #pragma acc data copyin(tt[0:torderlim], xCT[0:targetNum], yCT[0:targetNum], zCT[0:targetNum], qCT[0:clusterNum]) \
+    #pragma acc data copyin(tt[0:torderlim], xT[0:targetNum], yT[0:targetNum], zT[0:targetNum], qCT[0:clusterNum]) \
                             copy(EnP[0:targetNum])
     {
 
@@ -394,13 +369,7 @@ void cc_compute_batch_interp_interactions(struct batch *batches, struct particle
         
         double nodeX[torderlim], nodeY[torderlim], nodeZ[torderlim];
         double weights[torderlim], dj[torderlim];
-        int *exactIndX, *exactIndY, *exactIndZ;
         
-        double sumX, sumY, sumZ;
-        double tx, ty, tz, cx, cy, cz, cq;
-        double denominator, numerator, xn, yn, zn, temp;
-        int k1, k2, k3, kk;
-        double w1, w2, w3, w;
         
         double x0 = batches->x_min[idx];
         double x1 = batches->x_max[idx];
@@ -409,23 +378,11 @@ void cc_compute_batch_interp_interactions(struct batch *batches, struct particle
         double z0 = batches->z_min[idx];
         double z1 = batches->z_max[idx];
         
-        make_vector(exactIndX, pointsInNode);
-        make_vector(exactIndY, pointsInNode);
-        make_vector(exactIndZ, pointsInNode);
-
         int streamID = rand() % 4;
         #pragma acc kernels async(streamID) present(xT, yT, zT, qCT, tt) \
-            create(exactIndX[0:pointsInNode], exactIndY[0:pointsInNode], exactIndZ[0:pointsInNode], \
-            nodeX[0:torderlim], nodeY[0:torderlim], nodeZ[0:torderlim], weights[0:torderlim], dj[0:torderlim])
+            create(nodeX[0:torderlim], nodeY[0:torderlim], nodeZ[0:torderlim], weights[0:torderlim], dj[0:torderlim])
         {
         
-        #pragma acc loop independent
-        for (int j = 0; j < pointsInNode; j++) {
-            exactIndX[j] = -1;
-            exactIndY[j] = -1;
-            exactIndZ[j] = -1;
-        }
-
         //  Fill in arrays of unique x, y, and z coordinates for the interpolation points.
         #pragma acc loop independent
         for (int i = 0; i < torderlim; i++) {
@@ -447,81 +404,85 @@ void cc_compute_batch_interp_interactions(struct batch *batches, struct particle
             weights[j] = ((j % 2 == 0)? 1 : -1) * dj[j];
         }
         
-        #pragma acc loop independent
+        #pragma acc loop gang independent
         for (int i = 0; i < pointsInNode; i++) { // loop through the target points
 
-            sumX=0.0;
-            sumY=0.0;
-            sumZ=0.0;
+            double sumX=0.0;
+            double sumY=0.0;
+            double sumZ=0.0;
 
-            tx = xT[startingIndexInTargets+i];
-            ty = yT[startingIndexInTargets+i];
-            tz = zT[startingIndexInTargets+i];
+            double tx = xT[startingIndexInTargets+i];
+            double ty = yT[startingIndexInTargets+i];
+            double tz = zT[startingIndexInTargets+i];
 
-            #pragma acc loop independent
+            int eix=-1;
+            int eiy=-1;
+            int eiz=-1;
+
+            #pragma acc loop vector reduction(+:sumX) reduction(+:sumY) reduction(+:sumZ)
             for (int j = 0; j < torderlim; j++) {  // loop through the degree
 
-                cx = tx-nodeX[j];
-                cy = ty-nodeY[j];
-                cz = tz-nodeZ[j];
+                double cx = tx-nodeX[j];
+                double cy = ty-nodeY[j];
+                double cz = tz-nodeZ[j];
 
-                if (fabs(cx)<DBL_MIN) exactIndX[i]=j;
-                if (fabs(cy)<DBL_MIN) exactIndY[i]=j;
-                if (fabs(cz)<DBL_MIN) exactIndZ[i]=j;
+                if (fabs(cx)<DBL_MIN) eix=j;
+                if (fabs(cy)<DBL_MIN) eiy=j;
+                if (fabs(cz)<DBL_MIN) eiz=j;
 
                 // Increment the sums
-                w = weights[j];
-                sumX += w / (cx);
-                sumY += w / (cy);
-                sumZ += w / (cz);
+                double w = weights[j];
+                sumX += w / cx;
+                sumY += w / cy;
+                sumZ += w / cz;
 
             }
 
-            denominator = 1.0;
-            if (exactIndX[i]==-1) denominator /= sumX;
-            if (exactIndY[i]==-1) denominator /= sumY;
-            if (exactIndZ[i]==-1) denominator /= sumZ;
+            double denominator = 1.0;
+            if (eix==-1) denominator /= sumX;
+            if (eiy==-1) denominator /= sumY;
+            if (eiz==-1) denominator /= sumZ;
             
-            temp = 0.0;
+            double temp = 0.0;
             
-            #pragma acc loop independent
+            #pragma acc loop vector reduction(+:temp)
             for (int j = 0; j < pointsPerCluster; j++) { // loop over interpolation points, set (cx,cy,cz) for this point
 
-                k1 = j%torderlim;
-                kk = (j-k1)/torderlim;
-                k2 = kk%torderlim;
+                int k1 = j%torderlim;
+                int kk = (j-k1)/torderlim;
+                int k2 = kk%torderlim;
                 kk = kk - k2;
-                k3 = kk / torderlim;
+                int k3 = kk / torderlim;
 
-                w3 = weights[k3];
-                w2 = weights[k2];
-                w1 = weights[k1];
+                double w3 = weights[k3];
+                double w2 = weights[k2];
+                double w1 = weights[k1];
                 
-                cx = nodeX[k1];
-                cy = nodeY[k2];
-                cz = nodeZ[k3];
-                cq = qCT[startingIndexInClusters + j];
+                double cx = nodeX[k1];
+                double cy = nodeY[k2];
+                double cz = nodeZ[k3];
+                double cq = qCT[startingIndexInClusters + j];
             
-                numerator = 1.0;
+                double numerator = 1.0;
 
                 // If exactInd[i] == -1, then no issues.
                 // If exactInd[i] != -1, then we want to zero out terms EXCEPT when exactInd=k1.
-                if (exactIndX[i]==-1) {
+                if (eix==-1) {
                     numerator *=  w1 / (tx - cx);
                 } else {
-                    if (exactIndX[i]!=k1) numerator *= 0;
+                    if (eix!=k1) numerator *= 0;
                 }
 
-                if (exactIndY[i]==-1) {
+                if (eiy==-1) {
                     numerator *=  w2 / (ty - cy);
                 } else {
-                    if (exactIndY[i]!=k2) numerator *= 0;
+                    if (eiy!=k2) numerator *= 0;
                 }
 
-                if (exactIndZ[i]==-1) {
+                if (eiz==-1) {
                     numerator *=  w3 / (tz - cz);
                 } else {
-                    if (exactIndZ[i]!=k3) numerator *= 0;
+                    if (eiz!=k3) numerator *= 0;
                 }
 
                 temp += numerator * denominator * cq;
@@ -536,10 +497,8 @@ void cc_compute_batch_interp_interactions(struct batch *batches, struct particle
         }        
         } //end ACC kernels
         
-        free_vector(exactIndX);
-        free_vector(exactIndY);
-        free_vector(exactIndZ);
     } //end loop over nodes
+    #pragma acc wait
     } //end ACC data region
     } //end OMP parallel region
     

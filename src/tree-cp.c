@@ -569,18 +569,10 @@ void cp_fill_cluster_interp(struct particles *clusters, struct particles *target
                 int startingIndexInClusters = pointsPerCluster * i;
                 cp_comp_interp(tree_array, i, xT, yT, zT, qT,
                                      tempX, tempY, tempZ);
-                                     
-        //        for (int j = 0; j < pointsPerCluster; j++)
-        //        {
-        //            xC[startingIndexInClusters + j] = tempX[startingIndexInClusters + j];
-        //            yC[startingIndexInClusters + j] = tempY[startingIndexInClusters + j];
-        //            zC[startingIndexInClusters + j] = tempZ[startingIndexInClusters + j];
-        //        }
             }
             #pragma acc wait
         } // end ACC DATA REGION
 
-        int counter=0;
         for (int j = 0; j < clusters->num; j++)
         {
             if(tempX[j] != 0.0) clusters->x[j] = tempX[j];
@@ -604,12 +596,10 @@ void cp_comp_interp(struct tnode_array *tree_array, int idx,
         double *xT, double *yT, double *zT, double *qT,
         double *clusterX, double *clusterY, double *clusterZ)
 {
-    int i,j,k;
     int pointsPerCluster = torderlim*torderlim*torderlim;
     int startingIndexInClusters = idx * pointsPerCluster;
 
     double x0, x1, y0, y1, z0, z1;  // bounding box
-    int k1, k2, k3, kk;
 
     double nodeX[torderlim], nodeY[torderlim], nodeZ[torderlim];
     
@@ -639,11 +629,11 @@ void cp_comp_interp(struct tnode_array *tree_array, int idx,
     #pragma acc loop independent
     for (int j = 0; j < pointsPerCluster; j++) { // loop over interpolation points, set (cx,cy,cz) for this point
         // compute k1, k2, k3 from j
-        k1 = j%torderlim;
-        kk = (j-k1)/torderlim;
-        k2 = kk%torderlim;
+        int k1 = j%torderlim;
+        int kk = (j-k1)/torderlim;
+        int k2 = kk%torderlim;
         kk = kk - k2;
-        k3 = kk / torderlim;
+        int k3 = kk / torderlim;
 
         // Fill cluster X, Y, and Z arrays
         clusterX[startingIndexInClusters + j] = nodeX[k1];
@@ -897,7 +887,7 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
             weights[j] = ((j % 2 == 0)? 1 : -1) * dj[j];
         }
         
-        #pragma acc loop independent
+        #pragma acc loop gang independent
         for (int i = 0; i < pointsInNode; i++) { // loop through the target points
 
             double sumX=0.0;
@@ -912,7 +902,7 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
             int eiy = -1;
             int eiz = -1;
 
-            #pragma acc loop reduction(+:sumX) reduction(+:sumY) reduction(+:sumZ)
+            #pragma acc loop vector reduction(+:sumX) reduction(+:sumY) reduction(+:sumZ)
             for (int j = 0; j < torderlim; j++) {  // loop through the degree
 
                 double cx = tx-nodeX[j];
@@ -938,7 +928,7 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
             
             double temp = 0.0;
             
-            #pragma acc loop reduction(+:temp)
+            #pragma acc loop vector reduction(+:temp)
             for (int j = 0; j < pointsPerCluster; j++) { // loop over interpolation points, set (cx,cy,cz) for this point
 
                 int k1 = j%torderlim;
