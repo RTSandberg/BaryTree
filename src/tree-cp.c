@@ -674,9 +674,7 @@ void cp_interaction_list_treecode(struct tnode_array *tree_array, struct particl
                                   struct particles *sources, struct particles *targets,
                                   double *tpeng, double *EnP, int numDevices, int numThreads)
 {
-    int i, j;
-
-    for (i = 0; i < targets->num; i++)
+    for (int i = 0; i < targets->num; i++)
         EnP[i] = 0.0;
 
     #pragma omp parallel num_threads(numThreads)
@@ -691,7 +689,6 @@ void cp_interaction_list_treecode(struct tnode_array *tree_array, struct particl
         if (this_thread==0){printf("numDevices: %i\n", numDevices);}
         if (this_thread==0){printf("num_threads: %i\n", num_threads);}
         printf("this_thread: %i\n", this_thread);
-
 
         double *xS = sources->x;
         double *yS = sources->y;
@@ -719,34 +716,24 @@ void cp_interaction_list_treecode(struct tnode_array *tree_array, struct particl
                             copy(qC[0:clusters->num], EnP[0:targets->num])
         {
 
-        int batch_ibeg, batch_iend, node_index;
         double temp_i[torderlim], temp_j[torderlim], temp_k[torderlim];
-
-        int target_start, target_end;
-
-        int numberOfSources;
         int numberOfInterpolationPoints = torderlim*torderlim*torderlim;
-        int clusterStart, batchStart;
 
-        int numberOfClusterApproximations, numberOfDirectSums;
-        int streamID;
-
-        #pragma omp for private(batch_ibeg,batch_iend,numberOfClusterApproximations,\
-                                numberOfDirectSums,numberOfSources,batchStart,node_index,clusterStart,streamID)
+        #pragma omp for
         for (int i = 0; i < batches->num; i++) {
-            batch_ibeg = batches->index[i][0];
-            batch_iend = batches->index[i][1];
-            numberOfClusterApproximations = batches->index[i][2];
-            numberOfDirectSums = batches->index[i][3];
+            int batch_ibeg = batches->index[i][0];
+            int batch_iend = batches->index[i][1];
+            int numberOfClusterApproximations = batches->index[i][2];
+            int numberOfDirectSums = batches->index[i][3];
 
-            numberOfSources = batch_iend - batch_ibeg + 1;
-            batchStart =  batch_ibeg - 1;
+            int numberOfSources = batch_iend - batch_ibeg + 1;
+            int batchStart =  batch_ibeg - 1;
 
             for (int j = 0; j < numberOfClusterApproximations; j++) {
-                node_index = tree_inter_list[i * numnodes + j];
-                clusterStart = numberOfInterpolationPoints*node_index;
+                int node_index = tree_inter_list[i * numnodes + j];
+                int clusterStart = numberOfInterpolationPoints*node_index;
 
-                streamID = j%3;
+                int streamID = j%3;
                 #pragma acc kernels async(streamID)
                 {
                 #pragma acc loop independent
@@ -773,12 +760,12 @@ void cp_interaction_list_treecode(struct tnode_array *tree_array, struct particl
 
             for (int j = 0; j < numberOfDirectSums; j++) {
 
-                node_index = direct_inter_list[i * numleaves + j];
+                int node_index = direct_inter_list[i * numleaves + j];
 
-                target_start=ibegs[node_index]-1;
-                target_end=iends[node_index];
+                int target_start=ibegs[node_index]-1;
+                int target_end=iends[node_index];
 
-                streamID = j%3;
+                int streamID = j%3;
                 # pragma acc kernels async(streamID)
                 {
                 #pragma acc loop independent
