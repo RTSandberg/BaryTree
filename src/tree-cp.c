@@ -784,16 +784,20 @@ void cp_interaction_list_treecode(struct tnode_array *tree_array, struct particl
                 #pragma acc loop independent
                 for (int ii = batchStart; ii < batchStart+numberOfSources; ii++) {
                     double d_peng = 0.0;
+                    double xsrc = xS[ii];
+                    double ysrc = yS[ii];
+                    double zsrc = zS[ii];
+                    double qwsrc = qS[ii]*wS[ii];
 
                     #pragma acc loop reduction(+:d_peng)
                     for (int jj = target_start; jj < target_end; jj++) {
-                        double tx = xS[ii] - xT[jj];
-                        double ty = yS[ii] - yT[jj];
-                        double tz = zS[ii] - zT[jj];
+                        double tx = xsrc - xT[jj];
+                        double ty = ysrc - yT[jj];
+                        double tz = zsrc - zT[jj];
                         double r = sqrt(tx*tx + ty*ty + tz*tz);
 
                         if (r > DBL_MIN) {
-                            d_peng += qS[ii] * wS[ii] / r;
+                            d_peng += qwsrc / r;
                         }
                     }
 
@@ -866,7 +870,6 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
         
         double nodeX[torderlim], nodeY[torderlim], nodeZ[torderlim];
         double weights[torderlim], dj[torderlim];
-        int *exactIndX, *exactIndY, *exactIndZ;
         
         double sumX, sumY, sumZ;
         double tx, ty, tz, cx, cy, cz, cq;
@@ -880,24 +883,12 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
         double y1 = tree_array->y_max[idx];
         double z0 = tree_array->z_min[idx];
         double z1 = tree_array->z_max[idx];
-        
-        make_vector(exactIndX, pointsInNode);
-        make_vector(exactIndY, pointsInNode);
-        make_vector(exactIndZ, pointsInNode);
 
         int streamID = rand() % 4;
         #pragma acc kernels async(streamID) present(xT, yT, zT, qC, tt) \
-            create(exactIndX[0:pointsInNode], exactIndY[0:pointsInNode], exactIndZ[0:pointsInNode], \
-            nodeX[0:torderlim], nodeY[0:torderlim], nodeZ[0:torderlim], weights[0:torderlim], dj[0:torderlim])
+            create(nodeX[0:torderlim], nodeY[0:torderlim], nodeZ[0:torderlim], weights[0:torderlim], dj[0:torderlim])
         {
         
-        #pragma acc loop independent
-        for (int j = 0; j < pointsInNode; j++) {
-            exactIndX[j] = -1;
-            exactIndY[j] = -1;
-            exactIndZ[j] = -1;
-        }
-
         //  Fill in arrays of unique x, y, and z coordinates for the interpolation points.
         #pragma acc loop independent
         for (int i = 0; i < torderlim; i++) {
@@ -908,10 +899,10 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
         
         // Compute weights
         #pragma acc loop independent
-        for (int j = 0; j < torder+1; j++){
+        for (int j = 0; j < torderlim; j++){
             dj[j] = 1.0;
             if (j==0) dj[j] = 0.5;
-            if (j==torder) dj[j]=0.5;
+            if (j==torder) dj[j] = 0.5;
         }
 
         #pragma acc loop independent
@@ -930,6 +921,10 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
             double ty = yT[startingIndexInTargets+i];
             double tz = zT[startingIndexInTargets+i];
 
+            int eix = -1;
+            int eiy = -1;
+            int eiz = -1;
+
             #pragma acc loop reduction(+:sumX) reduction(+:sumY) reduction(+:sumZ)
             for (int j = 0; j < torderlim; j++) {  // loop through the degree
 
@@ -937,9 +932,9 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
                 double cy = ty-nodeY[j];
                 double cz = tz-nodeZ[j];
 
-                if (fabs(cx)<DBL_MIN) exactIndX[i]=j;
-                if (fabs(cy)<DBL_MIN) exactIndY[i]=j;
-                if (fabs(cz)<DBL_MIN) exactIndZ[i]=j;
+                if (fabs(cx)<DBL_MIN) eix=j;
+                if (fabs(cy)<DBL_MIN) eiy=j;
+                if (fabs(cz)<DBL_MIN) eiz=j;
 
                 // Increment the sums
                 double w = weights[j];
@@ -950,9 +945,9 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
             }
 
             double denominator = 1.0;
-            if (exactIndX[i]==-1) denominator /= sumX;
-            if (exactIndY[i]==-1) denominator /= sumY;
-            if (exactIndZ[i]==-1) denominator /= sumZ;
+            if (eix==-1) denominator /= sumX;
+            if (eiy==-1) denominator /= sumY;
+            if (eiz==-1) denominator /= sumZ;
             
             double temp = 0.0;
             
@@ -978,22 +973,22 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
 
                 // If exactInd[i] == -1, then no issues.
                 // If exactInd[i] != -1, then we want to zero out terms EXCEPT when exactInd=k1.
-                if (exactIndX[i]==-1) {
+                if (eix==-1) {
                     numerator *=  w1 / (tx - cx);
                 } else {
-                    if (exactIndX[i]!=k1) numerator *= 0;
+                    if (eix!=k1) numerator *= 0;
                 }
 
-                if (exactIndY[i]==-1) {
+                if (eiy==-1) {
                     numerator *=  w2 / (ty - cy);
                 } else {
-                    if (exactIndY[i]!=k2) numerator *= 0;
+                    if (eiy!=k2) numerator *= 0;
                 }
 
-                if (exactIndZ[i]==-1) {
+                if (eiz==-1) {
                     numerator *=  w3 / (tz - cz);
                 } else {
-                    if (exactIndZ[i]!=k3) numerator *= 0;
+                    if (eiz!=k3) numerator *= 0;
                 }
 
                 temp += numerator * denominator * cq;
@@ -1008,9 +1003,6 @@ void cp_compute_tree_interactions(struct tnode_array *tree_array, struct particl
         }        
         } //end ACC kernels
 
-        free_vector(exactIndX);
-        free_vector(exactIndY);
-        free_vector(exactIndZ);
     } //end loop over nodes
     #pragma acc wait
     } //end ACC data region
