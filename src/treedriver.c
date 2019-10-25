@@ -253,7 +253,7 @@ void treedriver(struct particles *sources, struct particles *targets,
             cp_interaction_list_treecode(tree_array, clusters, batches,
                                          tree_inter_list, direct_inter_list, sources, targets,
                                          tpeng, tEn, numThreads, numThreads);
-                                         
+             
             double timet2 = omp_get_wtime();
                                          
             cp_compute_tree_interactions(tree_array, clusters, targets,
