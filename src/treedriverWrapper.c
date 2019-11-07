@@ -32,19 +32,19 @@ void treedriverWrapper(int numTargets, int numSources,
 
 	if       (strcmp(kernelName,"coulomb")==0){
 		directKernel = &coulombKernel;
-		approxKernel = &coulombKernel;
+		approxKernel = &coulombKernel_approx_Lagrange;
 
 	}else if (strcmp(kernelName,"yukawa")==0){
 		directKernel = &yukawaKernel;
-		approxKernel = &yukawaKernel;
+		approxKernel = &yukawaKernel_approx_Lagrange;
 
 	}else if (strcmp(kernelName,"coulomb_SS")==0){
 		directKernel = &coulombKernel_SS_direct;
-		approxKernel = &coulombKernel_SS_approx;
+		approxKernel = &coulombKernel_SS_approx_Lagrange;
 
 	}else if (strcmp(kernelName,"yukawa_SS")==0){
 		directKernel = &yukawaKernel_SS_direct;
-		approxKernel = &yukawaKernel_SS_approx;
+		approxKernel = &yukawaKernel_SS_approx_Lagrange;
 
 	}else{
 		return;

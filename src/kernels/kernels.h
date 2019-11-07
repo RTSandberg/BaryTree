@@ -6,7 +6,16 @@ double coulombKernel( double targetX, double targetY, double targetZ, double tar
 					double sourceX, double sourceY, double sourceZ, double sourceQ, double sourceW,
 					double kappa);
 
+double coulombKernel_approx_Lagrange( double targetX, double targetY, double targetZ, double targetQ,
+					double sourceX, double sourceY, double sourceZ, double sourceQ, double sourceW,
+					double kappa);
+
+
 double yukawaKernel( double targetX, double targetY, double targetZ, double targetQ,
+					double sourceX, double sourceY, double sourceZ, double sourceQ, double sourceW,
+					double kappa);
+
+double yukawaKernel_approx_Lagrange( double targetX, double targetY, double targetZ, double targetQ,
 					double sourceX, double sourceY, double sourceZ, double sourceQ, double sourceW,
 					double kappa);
 
@@ -14,7 +23,7 @@ double coulombKernel_SS_direct( double targetX, double targetY, double targetZ, 
 					double sourceX, double sourceY, double sourceZ, double sourceQ, double sourceW,
 					double kappa);
 
-double coulombKernel_SS_approx( double targetX, double targetY, double targetZ, double targetQ,
+double coulombKernel_SS_approx_Lagrange( double targetX, double targetY, double targetZ, double targetQ,
 					double sourceX, double sourceY, double sourceZ, double sourceQ, double sourceW,
 					double kappa);
 
@@ -22,7 +31,7 @@ double yukawaKernel_SS_direct( double targetX, double targetY, double targetZ, d
 					double sourceX, double sourceY, double sourceZ, double sourceQ, double sourceW,
 					double kappa);
 
-double yukawaKernel_SS_approx( double targetX, double targetY, double targetZ, double targetQ,
+double yukawaKernel_SS_approx_Lagrange( double targetX, double targetY, double targetZ, double targetQ,
 					double sourceX, double sourceY, double sourceZ, double sourceQ, double sourceW,
 					double kappa);
 

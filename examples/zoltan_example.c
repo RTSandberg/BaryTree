@@ -255,7 +255,7 @@ int main(int argc, char **argv)
 	printf("Kernel Name: %s\n",kernelName);
 	if       (strcmp(kernelName,"coulomb")==0){
 		directKernel = &coulombKernel;
-		approxKernel = &coulombKernel;
+		approxKernel = &coulombKernel_approx_Lagrange;
 		if (rank==0) printf("Set kernel to coulombKernel.\n");
 		for (int i=0; i<targets->num; i++){
 			potential[i]=0.0;
@@ -264,7 +264,7 @@ int main(int argc, char **argv)
 
 	}else if (strcmp(kernelName,"yukawa")==0){
 		directKernel = &yukawaKernel;
-		approxKernel = &yukawaKernel;
+		approxKernel = &yukawaKernel_approx_Lagrange;
 		if (rank==0) printf("Set kernel to yukawaKernel.\n");
 		for (int i=0; i<targets->num; i++){
 			potential[i]=0.0;
@@ -273,7 +273,7 @@ int main(int argc, char **argv)
 
 	}else if (strcmp(kernelName,"coulomb_SS")==0){
 		directKernel = &coulombKernel_SS_direct;
-		approxKernel = &coulombKernel_SS_approx;
+		approxKernel = &coulombKernel_SS_approx_Lagrange;
 		if (rank==0) printf("Set kernel to coulombKernel_SS.\n");
 		for (int i=0; i<targets->num; i++){
 			potential[i]=2.0*M_PI*kappa*kappa*targets->q[i];
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
 
 	}else if (strcmp(kernelName,"yukawa_SS")==0){
 		directKernel = &yukawaKernel_SS_direct;
-		approxKernel = &yukawaKernel_SS_approx;
+		approxKernel = &yukawaKernel_SS_approx_Lagrange;
 		if (rank==0) printf("Set kernel to yukawaKernel_SS.\n");
 		for (int i=0; i<targets->num; i++){
 			potential[i]=4.0*M_PI*targets->q[i]/kappa/kappa;  // 4*pi*f_t/k**2
