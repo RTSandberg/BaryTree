@@ -105,13 +105,13 @@ void treedriver(struct particles *sources, struct particles *targets,
         time1 = MPI_Wtime();
 
         if        ((directKernel == &coulombKernel) || (directKernel == &yukawaKernel)) {
-            if (rank == 0) printf("Calling fill_in_cluster_data.\n");
+//            if (rank == 0) printf("Calling fill_in_cluster_data.\n");
             fill_in_cluster_data(clusters, sources, troot, interpolationOrder, tree_array);
 
         } else if ((directKernel == &coulombKernel_SS_direct) || (directKernel == &yukawaKernel_SS_direct)) {
-            if (rank == 0) printf("Calling fill_in_cluster_data_SS.\n");
+//            if (rank == 0) printf("Calling fill_in_cluster_data_SS.\n");
             fill_in_cluster_data_SS(clusters, sources, troot, interpolationOrder, tree_array);
-            printf("First element of clusterQ and clusterW: %f, %f\n",clusters->q[0], clusters->w[0] );
+//            printf("First element of clusterQ and clusterW: %f, %f\n",clusters->q[0], clusters->w[0] );
 
         } else {
             if (rank == 0) printf("Not sure how to fill cluster data... aborting.\n");

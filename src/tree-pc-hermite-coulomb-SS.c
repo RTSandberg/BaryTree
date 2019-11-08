@@ -141,7 +141,7 @@ void pc_treecode_hermite_coulomb_SS(struct tnode *p, struct batch *batches,
                  struct particles *sources, struct particles *targets, struct particles *clusters,
 				 double kappa, double *tpeng, double *EnP)
 {
-	printf("Entered pc_treecode_hermite_coulomb_SS.\n");
+//	printf("Entered pc_treecode_hermite_coulomb_SS.\n");
     /* local variables */
     int i, j;
     double kappaSq=kappa*kappa;

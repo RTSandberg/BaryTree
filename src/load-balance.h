@@ -5,9 +5,6 @@
  * declaration of load balancing functions
  */
 
+void load_balance(double *x, double *y, double *z, double *q, double *w, int numpars_local, int numpars_global);
 
-void load_balance(double *x, double *y, double *z, double *q, double *w, int numpars_local);
-
-
-
-#endif /* H_PARTITION_H */
+#endif /* H_LOADBALANCE_H */
