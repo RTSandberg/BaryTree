@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <mpi.h>
 #include <limits.h>
-#include<string.h>
+#include <string.h>
+#include <math.h>
 
 #include "array.h"
 #include "particles.h"
@@ -23,28 +24,40 @@ void treedriverWrapper(int numTargets, int numSources,
 		int order, double theta, int maxparnode, int batch_size) {
 
 	// Set up kernels
-	double (*directKernel)( double targetX, double targetY, double targetZ, double targetQ,
-					double sourceX, double sourceY, double sourceZ, double sourceQ, double sourceW,
+	double (*directKernel)( double targetX, double targetY, double targetZ, double targetValue,
+					double sourceX, double sourceY, double sourceZ, double sourceValue, double sourceWeight,
 					double kappa);
-	double (*approxKernel)( double targetX, double targetY, double targetZ, double targetQ,
-					double sourceX, double sourceY, double sourceZ, double sourceQ, double sourceW,
+	double (*approxKernel)( double targetX, double targetY, double targetZ, double targetValue,
+					double sourceX, double sourceY, double sourceZ, double sourceValue, double sourceWeight,
 					double kappa);
 
 	if       (strcmp(kernelName,"coulomb")==0){
 		directKernel = &coulombKernel;
 		approxKernel = &coulombKernel;
+		for (int i = 0; i < numTargets; i++) {
+			outputArray[i] = 0.0;
+		}
 
 	}else if (strcmp(kernelName,"yukawa")==0){
 		directKernel = &yukawaKernel;
 		approxKernel = &yukawaKernel;
+		for (int i = 0; i < numTargets; i++) {
+			outputArray[i] = 0.0;
+		}
 
 	}else if (strcmp(kernelName,"coulomb_SS")==0){
 		directKernel = &coulombKernel_SS_direct;
 		approxKernel = &coulombKernel_SS_approx;
+		for (int i = 0; i < numTargets; i++) {
+			outputArray[i] = 2.0*M_PI*kappa*kappa*targetValue[i];
+		}
 
 	}else if (strcmp(kernelName,"yukawa_SS")==0){
 		directKernel = &yukawaKernel_SS_direct;
 		approxKernel = &yukawaKernel_SS_approx;
+		for (int i = 0; i < numTargets; i++) {
+			outputArray[i] = 4.0*M_PI*targetValue[i]/kappa/kappa;
+		}
 
 	}else{
 		return;
