@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.9...3.14)
-project(BaryTree VERSION 1.0 LANGUAGES C)
+project(BaryTree VERSION 1.0 LANGUAGES C CUDA)
 
 set(default_build_type "Release")
 
@@ -23,7 +23,7 @@ option(BUILD_DIRECT "build direct computation executables"                     O
 option(BUILD_EXAMPLES "build examples with Zoltan"                             ON)
 option(BUILD_TESTS "build tests"                                               ON)
 option(RUN_TESTS_ON_BUILD "run tests on build"                                 OFF)
-option(BUILD_PROFILER "build simple profile kernels for GPU"                   OFF)
+option(BUILD_PROFILER "build simple profile kernels for GPU"                   ON)
 
 option(BUILD_TREE_LIBRARIES "build tree libraries for use with external codes" ON)
 option(BUILD_SHARED_LIBS "if building tree libraries, build as shared"         OFF)
@@ -51,9 +51,9 @@ set_property(TARGET OpenMP::OpenMP_C APPEND
 add_library(OpenACC_C INTERFACE)
 set_property(TARGET OpenACC_C        PROPERTY
                                          INTERFACE_COMPILE_OPTIONS
-                                         -acc
+                                         $<$<COMPILE_LANGUAGE:C>:-acc
                                          -ta=tesla:ccall,cc60$<$<CONFIG:Debug>:,time>
-                                         -Minfo)
+                                         -Minfo>)
 set_property(TARGET OpenACC_C        PROPERTY
                                          INTERFACE_LINK_LIBRARIES
                                          -acc
@@ -64,7 +64,7 @@ if(ENABLE_GPU_BUILD AND NOT (CMAKE_C_COMPILER_ID MATCHES PGI))
     set(ENABLE_GPU_BUILD OFF)
 endif()
 
-add_subdirectory(src)
-add_subdirectory(examples)
-add_subdirectory(tests)
+#add_subdirectory(src)
+#add_subdirectory(examples)
+#add_subdirectory(tests)
 add_subdirectory(profiler)

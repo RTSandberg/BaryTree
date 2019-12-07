@@ -12,7 +12,7 @@ void coulombDirect(int number_of_targets_in_batch, int number_of_source_points_i
 {
 
 #ifdef OPENACC_ENABLED
-    #pragma acc kernels async(gpu_async_stream_id) present(target_x, target_y, target_z, \
+    #pragma acc kernels present(target_x, target_y, target_z, \
                         source_x, source_y, source_z, source_charge, source_weight, potential)
     {
     #pragma acc loop independent
@@ -63,7 +63,7 @@ void coulombApproximationLagrange(int number_of_targets_in_batch, int number_of_
 {
 
 #ifdef OPENACC_ENABLED
-    #pragma acc kernels async(gpu_async_stream_id) present(target_x, target_y, target_z, \
+    #pragma acc kernels present(target_x, target_y, target_z, \
                         cluster_x, cluster_y, cluster_z, cluster_charge, potential)
     {
 #endif
