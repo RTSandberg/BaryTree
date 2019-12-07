@@ -1,17 +1,15 @@
 #include <math.h>
 #include <float.h>
-#include <stdio.h>
 
 
-
-__global__ void coulombDirect(int number_of_targets_in_batch, int number_of_source_points_in_cluster,
+__global__ void coulombDirect_cuda(int number_of_targets_in_batch, int number_of_source_points_in_cluster,
         int starting_index_of_target, int starting_index_of_source,
         const restrict double *target_x, const restrict double *target_y, const restrict double *target_z,
         const restrict double *source_x, const restrict double *source_y, const restrict double *source_z, const restrict double *source_charge, const restrict double *source_weight,
         double *potential, int gpu_async_stream_id)
 {
 
-    // compute block and thread indices.  Launch exactly number_of_targets_in_batch blocks.
+    // compute block and thread indices.  Note: need to have launched exactly number_of_targets_in_batch blocks.
     int bid = blockIdx.x*blockDim.x;
     int tid = blockIdx.x*blockDim.x + threadIdx.x;
     
