@@ -23,6 +23,7 @@ option(BUILD_DIRECT "build direct computation executables"                     O
 option(BUILD_EXAMPLES "build examples with Zoltan"                             ON)
 option(BUILD_TESTS "build tests"                                               ON)
 option(RUN_TESTS_ON_BUILD "run tests on build"                                 OFF)
+option(BUILD_PROFILER "build simple profile kernels for GPU"                   OFF)
 
 option(BUILD_TREE_LIBRARIES "build tree libraries for use with external codes" ON)
 option(BUILD_SHARED_LIBS "if building tree libraries, build as shared"         OFF)
@@ -66,3 +67,4 @@ endif()
 add_subdirectory(src)
 add_subdirectory(examples)
 add_subdirectory(tests)
+add_subdirectory(profiler)
