@@ -22,7 +22,7 @@ void Interaction_PC_Kernels(double *target_x, double *target_y, double *target_z
                             double *pointwisePotential, int interpolationOrder,
                             int numSources, int numTargets, int numberOfInterpolationPoints,
                             char *kernelName, double kernel_parameter, char *singularityHandling,
-                            char *approximationName)
+                            char *approximationName, int numLaunches)
 {
 
     int numberOfClusterCharges = numberOfInterpolationPoints;
@@ -44,8 +44,8 @@ void Interaction_PC_Kernels(double *target_x, double *target_y, double *target_z
 #endif
     {
 
-    int streamID = 0;
-
+    for (int i = 0; i < numLaunches; ++i) {
+        int streamID = i%3;
 
 /**********************************************************/
 /************** POTENTIAL FROM APPROX *********************/
@@ -175,6 +175,7 @@ void Interaction_PC_Kernels(double *target_x, double *target_y, double *target_z
             exit(1);
         }
 
+    }
 
 #ifdef OPENACC_ENABLED
         #pragma acc wait
@@ -193,7 +194,7 @@ void Interaction_Direct_Kernels(double *source_x, double *source_y, double *sour
                                 double *target_x, double *target_y, double *target_z, double *target_q,
                                 double *pointwisePotential, int numSources, int numTargets,
                                 char *kernelName, double kernel_parameter, char *singularityHandling,
-                                char *approximationName)
+                                char *approximationName, int numLaunches)
 {
 
 
@@ -205,66 +206,70 @@ void Interaction_Direct_Kernels(double *source_x, double *source_y, double *sour
 #endif
     {
 
+    for (int i = 0; i < numLaunches; ++i) {
+        int streamID = i%3;
 
 /**********************************************************/
 /************** POTENTIAL FROM DIRECT *********************/
 /**********************************************************/
 
 
-    /***************************************/
-    /********* Coulomb *********************/
-    /***************************************/
-
-    if (strcmp(kernelName, "coulomb") == 0) {
-
-        if (strcmp(singularityHandling, "skipping") == 0) {
-
-            coulombDirect(numTargets, numSources, 0, 0,
-                    target_x, target_y, target_z,
-                    source_x, source_y, source_z, source_q, source_w,
-                    pointwisePotential, 0);
-
-        } else if (strcmp(singularityHandling, "subtraction") == 0) {
-
-            coulombSingularitySubtractionDirect(numTargets, numSources, 0, 0,
-                    target_x, target_y, target_z, target_q,
-                    source_x, source_y, source_z, source_q, source_w,
-                    kernel_parameter, pointwisePotential, 0);
-
-        }else {
-            printf("Invalid choice of singularityHandling. Exiting. \n");
-            exit(1);
-        }
-
-    /***************************************/
-    /********* Yukawa **********************/
-    /***************************************/
-
-    } else if (strcmp(kernelName, "yukawa") == 0) {
-
-        if (strcmp(singularityHandling, "skipping") == 0) {
-
-            yukawaDirect(numTargets, numSources, 0, 0,
-                    target_x, target_y, target_z,
-                    source_x, source_y, source_z, source_q, source_w,
-                    kernel_parameter, pointwisePotential, 0);
-
-        } else if (strcmp(singularityHandling, "subtraction") == 0) {
-
-            yukawaSingularitySubtractionDirect(numTargets, numSources, 0, 0,
-                    target_x, target_y, target_z, target_q,
-                    source_x, source_y, source_z, source_q, source_w,
-                    kernel_parameter, pointwisePotential, 0);
-
+        /***************************************/
+        /********* Coulomb *********************/
+        /***************************************/
+    
+        if (strcmp(kernelName, "coulomb") == 0) {
+    
+            if (strcmp(singularityHandling, "skipping") == 0) {
+    
+                coulombDirect(numTargets, numSources, 0, 0,
+                        target_x, target_y, target_z,
+                        source_x, source_y, source_z, source_q, source_w,
+                        pointwisePotential, streamID);
+    
+            } else if (strcmp(singularityHandling, "subtraction") == 0) {
+    
+                coulombSingularitySubtractionDirect(numTargets, numSources, 0, 0,
+                        target_x, target_y, target_z, target_q,
+                        source_x, source_y, source_z, source_q, source_w,
+                        kernel_parameter, pointwisePotential, streamID);
+    
+            }else {
+                printf("Invalid choice of singularityHandling. Exiting. \n");
+                exit(1);
+            }
+    
+        /***************************************/
+        /********* Yukawa **********************/
+        /***************************************/
+    
+        } else if (strcmp(kernelName, "yukawa") == 0) {
+    
+            if (strcmp(singularityHandling, "skipping") == 0) {
+    
+                yukawaDirect(numTargets, numSources, 0, 0,
+                        target_x, target_y, target_z,
+                        source_x, source_y, source_z, source_q, source_w,
+                        kernel_parameter, pointwisePotential, streamID);
+    
+            } else if (strcmp(singularityHandling, "subtraction") == 0) {
+    
+                yukawaSingularitySubtractionDirect(numTargets, numSources, 0, 0,
+                        target_x, target_y, target_z, target_q,
+                        source_x, source_y, source_z, source_q, source_w,
+                        kernel_parameter, pointwisePotential, streamID);
+    
+            } else {
+                printf("Invalid choice of singularityHandling. Exiting. \n");
+                exit(1);
+            }
+    
+    
         } else {
-            printf("Invalid choice of singularityHandling. Exiting. \n");
+            printf("Invalid kernelName. Exiting.\n");
             exit(1);
         }
 
-
-    } else {
-        printf("Invalid kernelName. Exiting.\n");
-        exit(1);
     }
 
 #ifdef OPENACC_ENABLED

@@ -16,23 +16,21 @@ int main(int argc, char **argv)
 {
 
     //run parameters
-    int N, tree_type, order, max_per_leaf, max_per_batch, run_direct_comparison;
-    double kappa, theta; 
+    int N, order, numLaunches;
+    double kappa; 
     char *kernelName = NULL;
     char *singularityHandling = NULL;
     char *approximationName = NULL;
+    char *kernelType = NULL;
 
     N = atoi(argv[1]);
     order = atoi(argv[2]);
-    theta = atof(argv[3]);
-    max_per_leaf = atoi(argv[4]);
-    max_per_batch = atoi(argv[5]);
-    kernelName = argv[6];
-    kappa = atof(argv[7]);
-    singularityHandling = argv[8];
-    approximationName = argv[9];
-    tree_type = atoi(argv[10]);
-    run_direct_comparison = atoi(argv[11]);
+    kernelName = argv[3];
+    kappa = atof(argv[4]);
+    singularityHandling = argv[5];
+    approximationName = argv[6];
+    kernelType = argv[7];
+    numLaunches = atoi(argv[8]);
 
     int numClusterPts = (order+1)*(order+1)*(order+1);
 
@@ -109,21 +107,23 @@ int main(int argc, char **argv)
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    if (run_direct_comparison == 1) {
+    if (strcmp(kernelType,"direct") == 0) {
         if (rank == 0) fprintf(stderr,"Running direct kernels...\n");
         Interaction_Direct_Kernels(source_x, source_y, source_z, source_q, source_w,
                                    target_x, target_y, target_z, target_q,
                                    potential, N, N,
-                                   kernelName, kappa, singularityHandling, approximationName);
+                                   kernelName, kappa, singularityHandling, approximationName,
+                                   numLaunches);
         if (rank == 0) fprintf(stderr,"Done.\n");
     
     } else {
 
-        if (rank == 0) fprintf(stderr,"Running PC kernels..\n");
+        if (rank == 0) fprintf(stderr,"Running PC kernels...\n");
         Interaction_PC_Kernels(target_x, target_y, target_z, target_q,
                                cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
                                potential, order, N, N, numClusterPts,
-                               kernelName, kappa, singularityHandling, approximationName);
+                               kernelName, kappa, singularityHandling, approximationName,
+                               numLaunches);
         if (rank == 0) fprintf(stderr,"Done.\n");
     }
     
