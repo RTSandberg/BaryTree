@@ -1,0 +1,24 @@
+#ifndef H_INTERACTIONCOMPUTE_H
+#define H_INTERACTIONCOMPUTE_H
+
+#include "../src/struct_nodes.h"
+
+
+
+void Interaction_PC_Kernels(double *xT, double *yT, double *zT, double *qT,
+                            double *xC, double *yC, double *zC, double *qC, double *wC,
+                            double *pointwisePotential, int interpolationOrder,
+                            int numSources, int numTargets, int numClusters,
+                            char *kernelName, double kernel_parameter, char *singularityHandling,
+                            char *approximationName);
+
+
+void Interaction_Direct_Kernels(double *source_x, double *source_y, double *source_z,
+                            double *source_q, double *source_w,
+                            double *target_x, double *target_y, double *target_z, double *target_q,
+                            double *totalPotential, int numSources, int numTargets,
+                            char *kernelName, double kernel_parameter, char *singularityHandling,
+                            char *approximationName);
+
+
+#endif /* H_INTERACTIONCOMPUTE_H */
