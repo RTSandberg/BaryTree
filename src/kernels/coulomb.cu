@@ -1,6 +1,10 @@
+#ifndef H_COULOMB_DIRECT_CUDA_H
+#define H_COULOMB_DIRECT_CUDA_H
+
 #include <math.h>
 #include <float.h>
 
+#include "atomicAdd.cu"
 
 __global__ void coulombDirect_cuda(int number_of_targets_in_batch, int number_of_source_points_in_cluster,
         int starting_index_of_target, int starting_index_of_source,
@@ -17,6 +21,7 @@ __global__ void coulombDirect_cuda(int number_of_targets_in_batch, int number_of
     int sourceID = starting_index_of_source+tid;
      
     extern __shared__ double temporary_potential[];
+    temporary_potential[threadIdx.x] = 0.0;
 
     double3 t;
     t.x = target_x[targetID];
@@ -24,7 +29,7 @@ __global__ void coulombDirect_cuda(int number_of_targets_in_batch, int number_of
     t.z = target_z[targetID];
 
 
-    if(threadIdx.x<number_of_source_points_in_cluster){
+    if (threadIdx.x < number_of_source_points_in_cluster) {
 
         double3 d;
         d.x = t.x - source_x[sourceID];
@@ -47,7 +52,9 @@ __global__ void coulombDirect_cuda(int number_of_targets_in_batch, int number_of
     }
     __syncthreads();
     
-    if (threadIdx.x == 0) potential[targetID] += temporary_potential[0];
+    if (threadIdx.x == 0) atomicAdd(&potential[targetID], temporary_potential[0]);
 
     return;
 }
+
+#endif

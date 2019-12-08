@@ -42,8 +42,8 @@ int main(int argc, char **argv)
 
 
     /* variables for date-time calculation */
-    double time_run[4];
-    double time1 = MPI_Wtime();
+    double time_run[4], time1, time2;
+    time1 = MPI_Wtime();
 
 
     double *source_x = malloc(N*sizeof(double));
@@ -64,7 +64,6 @@ int main(int argc, char **argv)
     double *cluster_w = malloc(numClusterPts*sizeof(double));
 
     double *potential = malloc(N*sizeof(double));
-    double *potential_direct = malloc(N*sizeof(double));
 
     time_t t = time(NULL);
     unsigned t_hashed = (unsigned) t;
@@ -91,7 +90,6 @@ int main(int argc, char **argv)
         cluster_w[i] = ((double)rand()/(double)(RAND_MAX)) * 2. - 1.;
     }
 
-    memset(potential_direct, 0, N * sizeof(double));
     memset(potential, 0, N * sizeof(double));
 
 
@@ -101,7 +99,6 @@ int main(int argc, char **argv)
 #endif
 
     time_run[0] = MPI_Wtime() - time1;
-    time1 = MPI_Wtime();
 
     /* Calling main treecode subroutine to calculate approximate energy */
 
@@ -109,27 +106,37 @@ int main(int argc, char **argv)
 
     if (strcmp(kernelType,"direct") == 0) {
         if (rank == 0) fprintf(stderr,"Running direct kernels...\n");
+
+        time1 = MPI_Wtime();
         Interaction_Direct_Kernels(source_x, source_y, source_z, source_q, source_w,
                                    target_x, target_y, target_z, target_q,
                                    potential, N, N,
                                    kernelName, kappa, singularityHandling, approximationName,
                                    numLaunches);
+        time2 = MPI_Wtime()-time1;
+        double potsum = sum(potential, N);
+        printf("OpenACC direct sum: %f, time: %f\n", potsum, time2);
+
         if (rank == 0) fprintf(stderr,"Done.\n");
     
     } else {
 
         if (rank == 0) fprintf(stderr,"Running PC kernels...\n");
+
+        time1 = MPI_Wtime();
         Interaction_PC_Kernels(target_x, target_y, target_z, target_q,
                                cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
                                potential, order, N, N, numClusterPts,
                                kernelName, kappa, singularityHandling, approximationName,
                                numLaunches);
+        time2 = MPI_Wtime()-time1;
+        double potsum = sum(potential, N);
+        printf("OpenACC approx sum: %f, time: %f\n", potsum, time2);
+
         if (rank == 0) fprintf(stderr,"Done.\n");
     }
     
     MPI_Barrier(MPI_COMM_WORLD);
-
-    time_run[1] = MPI_Wtime() - time1;
     
 
     free(source_x);
@@ -150,7 +157,6 @@ int main(int argc, char **argv)
     free(cluster_w);
 
     free(potential);
-    free(potential_direct);
 
     MPI_Finalize();
 
