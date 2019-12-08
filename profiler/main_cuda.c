@@ -6,7 +6,7 @@
 #include <float.h>
 
 #include "../src/tools.h"
-#include "profile_kernels.h"
+#include "profile_kernels_cuda.h"
 
 
 const unsigned m = 1664525u;
@@ -93,11 +93,6 @@ int main(int argc, char **argv)
     memset(potential, 0, N * sizeof(double));
 
 
-#ifdef OPENACC_ENABLED
-    #pragma acc set device_num(rank) device_type(acc_device_nvidia)
-    #pragma acc init device_type(acc_device_nvidia)
-#endif
-
     time_run[0] = MPI_Wtime() - time1;
 
     /* Calling main treecode subroutine to calculate approximate energy */
@@ -108,32 +103,22 @@ int main(int argc, char **argv)
         if (rank == 0) fprintf(stderr,"Running direct kernels...\n");
 
         time1 = MPI_Wtime();
-        Interaction_Direct_Kernels(source_x, source_y, source_z, source_q, source_w,
+        Interaction_Direct_Kernels_cuda(source_x, source_y, source_z, source_q, source_w,
                                    target_x, target_y, target_z, target_q,
                                    potential, N, N,
                                    kernelName, kappa, singularityHandling, approximationName,
                                    numLaunches);
-        time2 = MPI_Wtime()-time1;
+        time2 = MPI_Wtime() - time1;
         double potsum = sum(potential, N);
-        printf("OpenACC direct sum: %f, time: %f\n", potsum, time2);
+        printf("CUDA direct sum: %f, time: %f\n", potsum, time2);
 
         if (rank == 0) fprintf(stderr,"Done.\n");
     
     } else {
 
         if (rank == 0) fprintf(stderr,"Running PC kernels...\n");
-
-        time1 = MPI_Wtime();
-        Interaction_PC_Kernels(target_x, target_y, target_z, target_q,
-                               cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
-                               potential, order, N, N, numClusterPts,
-                               kernelName, kappa, singularityHandling, approximationName,
-                               numLaunches);
-        time2 = MPI_Wtime()-time1;
-        double potsum = sum(potential, N);
-        printf("OpenACC approx sum: %f, time: %f\n", potsum, time2);
-
         if (rank == 0) fprintf(stderr,"Done.\n");
+
     }
     
     MPI_Barrier(MPI_COMM_WORLD);

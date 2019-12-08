@@ -10,7 +10,7 @@ __global__ void coulombDirect_cuda(int number_of_targets_in_batch, int number_of
         int starting_index_of_target, int starting_index_of_source,
         double *target_x, double *target_y, double *target_z,
         double *source_x, double *source_y, double *source_z, double *source_charge, double *source_weight,
-        double *potential, int gpu_async_stream_id)
+        double *potential)
 {
 
     // compute block and thread indices.  Note: need to have launched exactly number_of_targets_in_batch blocks.
@@ -35,10 +35,10 @@ __global__ void coulombDirect_cuda(int number_of_targets_in_batch, int number_of
         d.x = t.x - source_x[sourceID];
         d.y = t.y - source_y[sourceID];
         d.z = t.z - source_z[sourceID];
-        double r  = sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+        double r2  = d.x*d.x + d.y*d.y + d.z*d.z;
 
-        if (r > DBL_MIN) {
-            temporary_potential[threadIdx.x] = source_charge[sourceID] * source_weight[sourceID] / r;
+        if (r2 > DBL_MIN) {
+            temporary_potential[threadIdx.x] = source_charge[sourceID] * source_weight[sourceID] * rsqrt(r2);
         }
     } // end if tid<num
     __syncthreads();
