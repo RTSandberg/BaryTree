@@ -93,27 +93,21 @@ int main(int argc, char **argv)
     /* General parameters */
 
     Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
+    Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
     Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
     Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
     Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
     Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
     Zoltan_Set_Param(zz, "AUTO_MIGRATE", "TRUE"); 
 
-    if (partition == RCB) {
-        Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
-    } else if (partition == HSFC) {
-        Zoltan_Set_Param(zz, "LB_METHOD", "HSFC");
-    }
-
     /* RCB parameters */
 
     Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
     Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
-    Zoltan_Set_Param(zz, "RCB_MAX_ASPECT_RATIO", "1000000000"); 
 
     /* Setting up sources and load balancing */
 
-    srandom(1);
+    srand(1);
     mySources.numGlobalPoints = N * numProcs;
     mySources.numMyPoints = N;
     mySources.x = malloc(N*sizeof(double));
@@ -124,94 +118,22 @@ int main(int argc, char **argv)
     mySources.b = malloc(N*sizeof(double)); // load balancing weights
     mySources.myGlobalIDs = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * N);
 
-    if (distribution == UNIFORM) {
-
-        for (int j = 0; j < rank+1; ++j) { // Cycle to generate same particle no matter num ranks
-            for (int i = 0; i < N; ++i) {
-                mySources.x[i] = ((double)random()/(double)(RAND_MAX)) * 2. - 1.;
-                mySources.y[i] = ((double)random()/(double)(RAND_MAX)) * 2. - 1.;
-                mySources.z[i] = ((double)random()/(double)(RAND_MAX)) * 2. - 1.;
-                mySources.q[i] = ((double)random()/(double)(RAND_MAX)) * 2. - 1.;
-                mySources.w[i] = 1.0;
-                mySources.myGlobalIDs[i] = (ZOLTAN_ID_TYPE)(rank*N + i);
-                mySources.b[i] = 1.0; // dummy weighting scheme
-            }
+    for (int j = 0; j < rank+1; ++j) {
+        for (int i = 0; i < N; ++i) {
+            mySources.q[i] = ((double)rand()/(double)(RAND_MAX)) * 2. - 1.;
+            mySources.w[i] = 1.0;
+            mySources.myGlobalIDs[i] = (ZOLTAN_ID_TYPE)(rank*N + i);
+            mySources.b[i] = 1.0; // dummy weighting scheme
         }
-
-    } else if (distribution == PLUMMER) {
-
-        double plummer_R = 1.0;
-        double plummer_M = 1.0;
-
-        for (int j = 0; j < rank+1; ++j) { //Cycle to generate same particle no matter num ranks
-            for (int i = 0; i < N; ++i) {
-                Point_Plummer(plummer_R , &mySources.x[i], &mySources.y[i], &mySources.z[i]);
-                mySources.q[i] = plummer_M / N;
-                mySources.w[i] = 1.0;
-                mySources.myGlobalIDs[i] = (ZOLTAN_ID_TYPE)(rank*N + i);
-                mySources.b[i] = 1.0;
-            }
-        }
-
-    } else if (distribution == PLUMMER_SYMMETRIC) {
-
-        double plummer_R = 1.0;
-        double plummer_M = 1.0;
-
-        for (int j = 0; j < rank+1; ++j) { //Cycle to generate same particle no matter num ranks
-            for (int i = 0; i < N; ++i) {
-                mySources.q[i] = plummer_M / N;
-                mySources.w[i] = 1.0;
-                mySources.myGlobalIDs[i] = (ZOLTAN_ID_TYPE)(rank*N + i);
-                mySources.b[i] = 1.0;
-            }
-
-            for (int i = 0; i < N/8; ++i) {
-                double xx, yy, zz;
-                Point_Plummer_Octant(plummer_R , &xx, &yy, &zz);
-		
-		for (int ii = 0; ii < 2; ++ii) {
-		    for (int jj = 0; jj < 2; ++jj) {
-			for (int kk = 0; kk < 2; ++kk) {
-		    	    int index = (N/8) * (ii*4 + jj*2 + kk) + i;
-		    	    mySources.x[index] = xx * pow(-1, ii);
-		            mySources.y[index] = yy * pow(-1, jj);
-		            mySources.z[index] = zz * pow(-1, kk);
-                	}
-		    }
-		}
-            }
-        }
-        
-    } else if (distribution == GAUSSIAN) {
-
-        for (int j = 0; j < rank+1; ++j) { //Cycle to generate same particle no matter num ranks
-            for (int i = 0; i < N; ++i) {
-                Point_Gaussian(&mySources.x[i], &mySources.y[i], &mySources.z[i]);
-                mySources.q[i] = ((double)random()/(double)(RAND_MAX)) * 2. - 1.;
-                mySources.w[i] = 1.0;
-                mySources.myGlobalIDs[i] = (ZOLTAN_ID_TYPE)(rank*N + i);
-                mySources.b[i] = 1.0;
-            }
-        }
-
-    } else if (distribution == EXPONENTIAL) {
-
-        for (int j = 0; j < rank+1; ++j) { //Cycle to generate same particle no matter num ranks
-            for (int i = 0; i < N; ++i) {
-                Point_Exponential(&mySources.x[i], &mySources.y[i], &mySources.z[i]);
-                mySources.q[i] = ((double)random()/(double)(RAND_MAX)) * 2. - 1.;
-                mySources.w[i] = 1.0;
-                mySources.myGlobalIDs[i] = (ZOLTAN_ID_TYPE)(rank*N + i);
-                mySources.b[i] = 1.0;
-            }
-        }
-
-    } else {
-        printf("[random cube example] ERROR! Distribution %d undefined in this "
-                "context.  Exiting.\n", distribution);
-        exit(1);
     }
+    
+
+    FILE *points_fp = fopen(argv[2], "r");
+    for (int i = 0; i < N; ++i) {
+        fscanf(points_fp, "%lf %lf %lf", &mySources.x[i], &mySources.y[i], &mySources.z[i]);
+    }
+    fclose(points_fp);
+
 
     /* Query functions, to provide geometry to Zoltan */
 
@@ -268,6 +190,7 @@ int main(int argc, char **argv)
     
     sources = malloc(sizeof(struct Particles));
     sources->num = mySources.numMyPoints;
+
     
     MPI_Alloc_mem(sources->num * sizeof(double), MPI_INFO_NULL, &(sources->x));
     MPI_Alloc_mem(sources->num * sizeof(double), MPI_INFO_NULL, &(sources->y));
@@ -280,17 +203,13 @@ int main(int argc, char **argv)
     memcpy(sources->q, mySources.q, sources->num * sizeof(double));
     memcpy(sources->w, mySources.w, sources->num * sizeof(double));
 
-    /* Output load balanced points */
-  
-    /*
     char points_file[256];
     sprintf(points_file, "points_rank_%d.csv", rank);
-    FILE *points_fp = fopen(points_file, "w");
+    points_fp = fopen(points_file, "w");
     for (int i = 0; i < sources->num; ++i) {
         fprintf(points_fp, "%e, %e, %e\n", sources->x[i], sources->y[i], sources->z[i]);
     }
     fclose(points_fp);
-    */
     
     /* Setting up targets */
     

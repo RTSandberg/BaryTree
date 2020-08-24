@@ -61,28 +61,10 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
     int tree_numnodes = tree->numnodes;
     int batch_numnodes = batches->numnodes;
 
-    double *potential_direct, *potential_approx;
-    make_vector(potential_direct, num_targets);
-    make_vector(potential_approx, num_targets);
-
-    memset(potential_approx, 0, num_targets * sizeof(double));
-    memset(potential_direct, 0, num_targets * sizeof(double));
-
     int *tree_ibeg = tree->ibeg;
     int *tree_iend = tree->iend;
     int *cluster_ind = tree->cluster_ind;
 
-#ifdef OPENACC_ENABLED
-    #pragma acc data copyin(source_x[0:num_sources], source_y[0:num_sources], source_z[0:num_sources], \
-                        source_q[0:num_sources], source_w[0:num_sources], \
-                        target_x[0:num_targets], target_y[0:num_targets], target_z[0:num_targets], \
-                        target_q[0:num_targets], \
-                        cluster_x[0:total_num_interp_pts], cluster_y[0:total_num_interp_pts], \
-                        cluster_z[0:total_num_interp_pts], \
-                        cluster_q[0:total_num_interp_charges], cluster_w[0:total_num_interp_weights]) \
-                        copy(potential_approx[0:num_targets], potential_direct[0:num_targets])
-#endif
-    {
 
     for (int i = 0; i < batches->numnodes; i++) {
         int batch_ibeg = batches->ibeg[i];
@@ -118,7 +100,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                 interp_pts_per_cluster, batch_start, cluster_start,
                                 target_x, target_y, target_z,
                                 cluster_x, cluster_y, cluster_z, cluster_q,
-                                run_params, potential_approx, stream_id);
+                                run_params, potential, stream_id);
 
                     } else if (run_params->singularity == SUBTRACTION) {
 
@@ -126,7 +108,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                 interp_pts_per_cluster, batch_start, cluster_start,
                                 target_x, target_y, target_z, target_q,
                                 cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
-                                run_params, potential_approx, stream_id);
+                                run_params, potential, stream_id);
 
                     } else {
                         printf("**ERROR** INVALID CHOICE OF SINGULARITY. EXITING. \n");
@@ -142,7 +124,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                 cluster_start, total_num_interp_pts,
                                 target_x, target_y, target_z,
                                 cluster_x, cluster_y, cluster_z, cluster_q,
-                                run_params, potential_approx, stream_id);
+                                run_params, potential, stream_id);
 
                     } else if (run_params->singularity == SUBTRACTION) {
 
@@ -151,7 +133,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                 cluster_start, total_num_interp_pts,
                                 target_x, target_y, target_z, target_q,
                                 cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
-                                run_params, potential_approx, stream_id);
+                                run_params, potential, stream_id);
 
                     } else {
                         printf("**ERROR** INVALID CHOICE OF SINGULARITY. EXITING. \n");
@@ -177,7 +159,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                 interp_pts_per_cluster, batch_start, cluster_start,
                                 target_x, target_y, target_z,
                                 cluster_x, cluster_y, cluster_z, cluster_q,
-                                run_params, potential_approx, stream_id);
+                                run_params, potential, stream_id);
 
                     } else if (run_params->singularity == SUBTRACTION) {
                         
@@ -185,7 +167,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                 interp_pts_per_cluster, batch_start, cluster_start,
                                 target_x, target_y, target_z, target_q,
                                 cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
-                                run_params, potential_approx, stream_id);
+                                run_params, potential, stream_id);
 
                     } else {
                         printf("**ERROR** INVALID CHOICE OF SINGULARITY. EXITING. \n");
@@ -201,7 +183,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                 cluster_start, total_num_interp_pts,
                                 target_x, target_y, target_z,
                                 cluster_x, cluster_y, cluster_z, cluster_q,
-                                run_params, potential_approx, stream_id);
+                                run_params, potential, stream_id);
 
                     } else if (run_params->singularity == SUBTRACTION) {
 
@@ -210,7 +192,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                 cluster_start, total_num_interp_pts,
                                 target_x, target_y, target_z, target_q,
                                 cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
-                                run_params, potential_approx, stream_id);
+                                run_params, potential, stream_id);
 
                     } else {
                         printf("**ERROR** INVALID CHOICE OF SINGULARITY. EXITING. \n");
@@ -236,7 +218,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     target_x, target_y, target_z,
                                     cluster_x, cluster_y, cluster_z, cluster_q,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
 
                     } else if (run_params->singularity == SUBTRACTION) {
 
@@ -244,7 +226,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     target_x, target_y, target_z, target_q,
                                     cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
                     }
 
                 } else if (run_params->approximation == HERMITE) {
@@ -255,7 +237,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     total_num_interp_pts, target_x, target_y, target_z,
                                     cluster_x, cluster_y, cluster_z, cluster_q,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
 
                     } else if (run_params->singularity == SUBTRACTION) {
 
@@ -263,7 +245,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     total_num_interp_pts, target_x, target_y, target_z, target_q,
                                     cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
                     }
                 }
 
@@ -281,7 +263,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     target_x, target_y, target_z,
                                     cluster_x, cluster_y, cluster_z, cluster_q,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
 
                     } else if (run_params->singularity == SUBTRACTION) {
 
@@ -289,7 +271,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     target_x, target_y, target_z, target_q,
                                     cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
 
                     }
 
@@ -305,7 +287,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     total_num_interp_pts, target_x, target_y, target_z,
                                     cluster_x, cluster_y, cluster_z, cluster_q,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
                         */
 
                     } else if (run_params->singularity == SUBTRACTION) {
@@ -319,7 +301,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     total_num_interp_pts, target_x, target_y, target_z, target_q,
                                     cluster_x, cluster_y, cluster_z, cluster_q, cluster_w,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
                         */
                     }
                 }
@@ -337,7 +319,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     target_x, target_y, target_z,
                                     cluster_x, cluster_y, cluster_z, cluster_q,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
 
                 } else if (run_params->approximation == HERMITE) {
 
@@ -360,7 +342,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     target_x, target_y, target_z,
                                     cluster_x, cluster_y, cluster_z, cluster_q,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
                     }
 
                 } else if (run_params->approximation == HERMITE) {
@@ -371,7 +353,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     total_num_interp_pts, target_x, target_y, target_z,
                                     cluster_x, cluster_y, cluster_z, cluster_q,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
                     }
                 }
 
@@ -388,7 +370,7 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                                     interp_pts_per_cluster, batch_start, cluster_start,
                                     target_x, target_y, target_z,
                                     cluster_x, cluster_y, cluster_z, cluster_q,
-                                    run_params, potential_approx, stream_id);
+                                    run_params, potential, stream_id);
 
                 } else if (run_params->approximation == HERMITE) {
 
@@ -425,19 +407,19 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
 
                 if (run_params->singularity == SKIPPING) {
 
-                    K_Coulomb_Direct(num_targets_in_batch, num_sources_in_cluster,
+                    K_Coulomb_PP(num_targets_in_batch, num_sources_in_cluster,
                             batch_start, source_start,
                             target_x, target_y, target_z,
-                            source_x, source_y, source_z, source_q, source_w,
-                            run_params, potential_direct, stream_id);
+                            source_x, source_y, source_z, source_q,
+                            run_params, potential, stream_id);
 
                 } else if (run_params->singularity == SUBTRACTION) {
 
-                    K_Coulomb_SS_Direct(num_targets_in_batch, num_sources_in_cluster,
+                    K_Coulomb_SS_PP(num_targets_in_batch, num_sources_in_cluster,
                             batch_start, source_start,
                             target_x, target_y, target_z, target_q,
                             source_x, source_y, source_z, source_q, source_w,
-                            run_params, potential_direct, stream_id);
+                            run_params, potential, stream_id);
 
                 } else {
                     printf("**ERROR** INVALID CHOICE OF SINGULARITY. EXITING. \n");
@@ -452,19 +434,19 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
 
                 if (run_params->singularity == SKIPPING) {
 
-                    K_Yukawa_Direct(num_targets_in_batch, num_sources_in_cluster,
+                    K_Yukawa_PP(num_targets_in_batch, num_sources_in_cluster,
                             batch_start, source_start,
                             target_x, target_y, target_z,
-                            source_x, source_y, source_z, source_q, source_w,
-                            run_params, potential_direct, stream_id);
+                            source_x, source_y, source_z, source_q,
+                            run_params, potential, stream_id);
 
                 } else if (run_params->singularity == SUBTRACTION) {
 
-                    K_Yukawa_SS_Direct(num_targets_in_batch, num_sources_in_cluster,
+                    K_Yukawa_SS_PP(num_targets_in_batch, num_sources_in_cluster,
                             batch_start, source_start,
                             target_x, target_y, target_z, target_q,
                             source_x, source_y, source_z, source_q, source_w,
-                            run_params, potential_direct, stream_id);
+                            run_params, potential, stream_id);
 
                 } else {
                     printf("**ERROR** INVALID CHOICE OF SINGULARITY. EXITING. \n");
@@ -479,19 +461,19 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
 
                 if (run_params->singularity == SKIPPING) {
 
-                    K_RegularizedCoulomb_Direct(num_targets_in_batch, num_sources_in_cluster,
+                    K_RegularizedCoulomb_PP(num_targets_in_batch, num_sources_in_cluster,
                                 batch_start, source_start,
                                 target_x, target_y, target_z,
-                                source_x, source_y, source_z, source_q, source_w,
-                                run_params, potential_direct, stream_id);
+                                source_x, source_y, source_z, source_q,
+                                run_params, potential, stream_id);
 
                 } else if (run_params->singularity == SUBTRACTION) {
 
-                    K_RegularizedCoulomb_SS_Direct(num_targets_in_batch, num_sources_in_cluster,
+                    K_RegularizedCoulomb_SS_PP(num_targets_in_batch, num_sources_in_cluster,
                                 batch_start, source_start,
                                 target_x, target_y, target_z, target_q,
                                 source_x, source_y, source_z, source_q, source_w,
-                                run_params, potential_direct, stream_id);
+                                run_params, potential, stream_id);
                 }
 
 
@@ -503,19 +485,19 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
 
                 if (run_params->singularity == SKIPPING) {
 
-                    K_RegularizedYukawa_Direct(num_targets_in_batch, num_sources_in_cluster,
+                    K_RegularizedYukawa_PP(num_targets_in_batch, num_sources_in_cluster,
                             batch_start, source_start,
                             target_x, target_y, target_z,
-                            source_x, source_y, source_z, source_q, source_w,
-                            run_params, potential_direct, stream_id);
+                            source_x, source_y, source_z, source_q,
+                            run_params, potential, stream_id);
 
                 } else if (run_params->singularity == SUBTRACTION) {
 
-                    K_RegularizedYukawa_SS_Direct(num_targets_in_batch, num_sources_in_cluster,
+                    K_RegularizedYukawa_SS_PP(num_targets_in_batch, num_sources_in_cluster,
                             batch_start, source_start,
                             target_x, target_y, target_z, target_q,
                             source_x, source_y, source_z, source_q, source_w,
-                            run_params, potential_direct, stream_id);
+                            run_params, potential, stream_id);
 
                 }
 
@@ -526,11 +508,11 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
 
             } else if (run_params->kernel == ATAN) {
 
-                K_Atan_Direct(num_targets_in_batch, num_sources_in_cluster,
+                K_Atan_PP(num_targets_in_batch, num_sources_in_cluster,
                             batch_start, source_start,
                             target_x, target_y, target_z,
-                            source_x, source_y, source_z, source_q, source_w,
-                            run_params, potential_direct, stream_id);
+                            source_x, source_y, source_z, source_q,
+                            run_params, potential, stream_id);
 
 
 
@@ -540,11 +522,11 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
 
             } else if (run_params->kernel == MQ) {
 
-                K_MQ_Direct(num_targets_in_batch, num_sources_in_cluster,
+                K_MQ_PP(num_targets_in_batch, num_sources_in_cluster,
                             batch_start, source_start,
                             target_x, target_y, target_z,
-                            source_x, source_y, source_z, source_q, source_w,
-                            run_params, potential_direct, stream_id);
+                            source_x, source_y, source_z, source_q,
+                            run_params, potential, stream_id);
 
 
     /***************************************/
@@ -553,11 +535,11 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
 
             } else if (run_params->kernel == SIN_OVER_R) {
 
-                K_SinOverR_Direct(num_targets_in_batch, num_sources_in_cluster,
+                K_SinOverR_PP(num_targets_in_batch, num_sources_in_cluster,
                             batch_start, source_start,
                             target_x, target_y, target_z,
-                            source_x, source_y, source_z, source_q, source_w,
-                            run_params, potential_direct, stream_id);
+                            source_x, source_y, source_z, source_q,
+                            run_params, potential, stream_id);
 
             } else {
                 printf("**ERROR** INVALID KERNEL. EXITING.\n");
@@ -568,18 +550,8 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
 
     } // end loop over target batches
 #ifdef OPENACC_ENABLED
-        #pragma acc wait
+    #pragma acc wait
 #endif
-    } // end acc data region
-
-    for (int k = 0; k < num_targets; k++) 
-        potential[k] += potential_direct[k];
-
-    for (int k = 0; k < num_targets; k++) 
-        potential[k] += potential_approx[k];
-
-    free_vector(potential_direct);
-    free_vector(potential_approx);
 
     return;
 
