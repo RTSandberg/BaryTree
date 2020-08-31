@@ -473,6 +473,19 @@ void pc_compute_interaction_list(
     double tz = batch_z_mid - tree_z_mid[tree_node];
     double dist = sqrt(tx*tx + ty*ty + tz*tz);
 
+    // periodic distance in interaction_list compute
+    if (run_params->kernel == MQ || run_params->kernel == ATAN) {
+        double domainLength = run_params->kernel_params[0];
+
+        while (tz < -0.5*domainLength) {
+            tz += domainLength;
+        }
+        while (tz > 0.5 * domainLength) {
+            tz -= domainLength;
+        }
+        dist = fabs(tz);
+    }
+
 
     if (((tree_radius[tree_node] + batch_radius) < dist * run_params->theta)
       && (tree_radius[tree_node] != 0.00)

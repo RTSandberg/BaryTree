@@ -30,6 +30,8 @@ void K_MQ_PP(int number_of_targets_in_batch, int number_of_source_points_in_clus
 #endif
 #ifdef OPENACC_ENABLED
     #pragma acc loop independent
+#else
+#pragma omp parallel for
 #endif
     for (int i = 0; i < number_of_targets_in_batch; i++) {
 
@@ -45,10 +47,10 @@ void K_MQ_PP(int number_of_targets_in_batch, int number_of_source_points_in_clus
             int jj = starting_index_of_source + j;
             double dz = (tz - source_z[jj]) / domainLength;
 
-            if (dz < -0.5) {
+            while (dz < -0.5) {
                 dz += 1.0;
             }
-            if (dz > 0.5) {
+            while (dz > 0.5) {
                 dz -= 1.0;
             }
             temporary_potential += source_charge[jj]
