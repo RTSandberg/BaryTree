@@ -31,7 +31,7 @@ void K_MQ_PP(int number_of_targets_in_batch, int number_of_source_points_in_clus
 #ifdef OPENACC_ENABLED
     #pragma acc loop independent
 #else
-#pragma omp parallel for
+    #pragma omp parallel for
 #endif
     for (int i = 0; i < number_of_targets_in_batch; i++) {
 

@@ -29,6 +29,8 @@ void K_MQ_PC_Lagrange(int number_of_targets_in_batch, int number_of_interpolatio
 #endif
 #ifdef OPENACC_ENABLED
     #pragma acc loop independent
+#else
+    #pragma omp parallel for
 #endif
     for (int i = 0; i < number_of_targets_in_batch; i++) {
 
@@ -44,10 +46,10 @@ void K_MQ_PC_Lagrange(int number_of_targets_in_batch, int number_of_interpolatio
             int jj = starting_index_of_cluster + j;
             double dz = (tz - cluster_z[jj]) / domainLength;
 
-            if (dz < -0.5) {
+            while (dz < -0.5) {
                 dz += 1.0;
             }
-            if (dz > 0.5) {
+            while (dz > 0.5) {
                 dz -= 1.0;
             }
 
