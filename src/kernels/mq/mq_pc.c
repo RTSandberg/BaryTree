@@ -19,7 +19,8 @@ void K_MQ_PC_Lagrange(int number_of_targets_in_batch, int number_of_interpolatio
 
     double domainLength = run_params->kernel_params[0];
     double delta = run_params->kernel_params[1];
-    double deltaLsq = delta * delta / domainLength / domainLength;
+    double deltasq = delta * delta;
+    double deltaLsq = deltasq/ domainLength / domainLength;
     double norm_delta_L = sqrt(1 + 4 * deltaLsq);
 
 #ifdef OPENACC_ENABLED
@@ -41,21 +42,32 @@ void K_MQ_PC_Lagrange(int number_of_targets_in_batch, int number_of_interpolatio
 #ifdef OPENACC_ENABLED
         #pragma acc loop independent reduction(+:temporary_potential)
 #endif
-        for (int j = 0; j < number_of_interpolation_points_in_cluster; j++) {
+        if (domainLength > 0) { // periodic
+            for (int j = 0; j < number_of_interpolation_points_in_cluster; j++) {
 
-            int jj = starting_index_of_cluster + j;
-            double dz = (tz - cluster_z[jj]) / domainLength;
+                int jj = starting_index_of_cluster + j;
+                double dz = (tz - cluster_z[jj]) / domainLength;
 
-            while (dz < -0.5) {
-                dz += 1.0;
+                while (dz < -0.5) {
+                    dz += 1.0;
+                }
+                while (dz > 0.5) {
+                    dz -= 1.0;
+                }
+
+                temporary_potential += cluster_charge[jj]
+                                    * (.5 * dz * norm_delta_L / sqrt(dz * dz + deltaLsq) - dz);
+            } // end loop over interpolation points
+        } else {
+            for (int j = 0; j < number_of_interpolation_points_in_cluster; j++) {
+
+                int jj = starting_index_of_cluster + j;
+                double dz = tz - cluster_z[jj];
+
+                temporary_potential += cluster_charge[jj]
+                                    * .5 * dz / sqrt(dz * dz + deltasq);
             }
-            while (dz > 0.5) {
-                dz -= 1.0;
-            }
-
-            temporary_potential += cluster_charge[jj]
-                                * (.5 * dz * norm_delta_L / sqrt(dz * dz + deltaLsq) - dz);
-        } // end loop over interpolation points
+        }
 #ifdef OPENACC_ENABLED
         #pragma acc atomic
 #endif
