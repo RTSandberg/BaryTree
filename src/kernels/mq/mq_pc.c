@@ -72,6 +72,9 @@ void K_MQ_PC_Lagrange(int number_of_targets_in_batch, int number_of_interpolatio
         #pragma acc atomic
 #endif
         potential[ii] += temporary_potential;
+        if (domainLength <= 0) { // if not periodic
+            potential[ii] -= target_z[ii];
+        }
     }
 #ifdef OPENACC_ENABLED
     } // end kernel

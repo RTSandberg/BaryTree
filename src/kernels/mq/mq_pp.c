@@ -69,6 +69,9 @@ void K_MQ_PP(int number_of_targets_in_batch, int number_of_source_points_in_clus
         #pragma acc atomic
 #endif
         potential[ii] += temporary_potential;
+        if (domainLength <= 0) { // if not periodic
+            potential[ii] -= target_z[ii];
+        }
     }
 #ifdef OPENACC_ENABLED
     } // end kernel
