@@ -40,10 +40,11 @@ void K_MQ_PP(int number_of_targets_in_batch, int number_of_source_points_in_clus
         double temporary_potential = 0.0;
         double tz = target_z[ii];
 
+        if (domainLength > 0) { // if periodic
+
 #ifdef OPENACC_ENABLED
         #pragma acc loop independent reduction(+:temporary_potential)
 #endif
-        if (domainLength > 0) { // if periodic
             for (int j = 0; j < number_of_source_points_in_cluster; j++) {
                 int jj = starting_index_of_source + j;
                 double dz = (tz - source_z[jj]) / domainLength;
@@ -58,6 +59,10 @@ void K_MQ_PP(int number_of_targets_in_batch, int number_of_source_points_in_clus
                                     * (.5 * dz * norm_delta_L / sqrt(dz * dz + deltaLsq) - dz);
             } // end loop over interpolation points
         } else {
+
+#ifdef OPENACC_ENABLED
+        #pragma acc loop independent reduction(+:temporary_potential)
+#endif
             for (int j = 0; j < number_of_source_points_in_cluster; j++) {
                 int jj = starting_index_of_source + j;
                 double dz = tz - source_z[jj];
