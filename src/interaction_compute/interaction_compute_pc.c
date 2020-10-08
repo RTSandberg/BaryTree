@@ -19,6 +19,7 @@
 #include "../kernels/atan/atan.h"
 #include "../kernels/sin-over-r/sin-over-r.h"
 #include "../kernels/mq/mq.h"
+#include "../kernels/user_kernel/user_kernel.h"
 
 #include "interaction_compute.h"
 
@@ -64,21 +65,6 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
     int *tree_ibeg = tree->ibeg;
     int *tree_iend = tree->iend;
     int *cluster_ind = tree->cluster_ind;
-    
-    
-    
-#ifdef OPENACC_ENABLED
-    #pragma acc data copyin(source_x[0:num_sources], source_y[0:num_sources], source_z[0:num_sources], \
-                        source_q[0:num_sources], source_w[0:num_sources], \
-                        target_x[0:num_targets], target_y[0:num_targets], target_z[0:num_targets], \
-                        target_q[0:num_targets], \
-                        cluster_x[0:total_num_interp_pts], cluster_y[0:total_num_interp_pts], \
-                        cluster_z[0:total_num_interp_pts], \
-                        cluster_q[0:total_num_interp_charges], cluster_w[0:total_num_interp_weights]) \
-                        copy(potential[0:num_targets])
-#endif
-    {
-    
 
 
     for (int i = 0; i < batches->numnodes; i++) {
@@ -393,6 +379,22 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                     exit(1);
                 }
 
+    /***************************************/
+    /********* USER DEFINED KERNEL *********/
+    /***************************************/
+
+            } else if (run_params->kernel == USER) {
+
+                if (run_params->approximation == LAGRANGE) {
+
+                        K_User_Kernel_PC_Lagrange(num_targets_in_batch,
+                                    interp_pts_per_cluster, batch_start, cluster_start,
+                                    target_x, target_y, target_z,
+                                    cluster_x, cluster_y, cluster_z, cluster_q,
+                                    run_params, potential, stream_id);
+
+                }
+
             } else {
                 printf("**ERROR** INVALID KERNEL. EXITING.\n");
                 exit(1);
@@ -556,6 +558,18 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
                             source_x, source_y, source_z, source_q,
                             run_params, potential, stream_id);
 
+    /***************************************/
+    /******** USER DEFINED KERNEL **********/
+    /***************************************/
+
+            } else if (run_params->kernel == USER) {
+
+                K_User_Kernel_PP(num_targets_in_batch, num_sources_in_cluster,
+                            batch_start, source_start,
+                            target_x, target_y, target_z,
+                            source_x, source_y, source_z, source_q,
+                            run_params, potential, stream_id);
+
             } else {
                 printf("**ERROR** INVALID KERNEL. EXITING.\n");
                 exit(1);
@@ -567,8 +581,6 @@ void InteractionCompute_PC(double *potential, struct Tree *tree, struct Tree *ba
 #ifdef OPENACC_ENABLED
     #pragma acc wait
 #endif
-
-    } // end acc data region
 
     return;
 

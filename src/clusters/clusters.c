@@ -105,26 +105,35 @@ void Clusters_Sources_Construct(struct Clusters **clusters_addr, const struct Pa
     double *wC = clusters->w;
 
 
-//#ifdef OPENACC_ENABLED
-//    #pragma acc enter data create(xC[0:totalNumberInterpolationPoints], yC[0:totalNumberInterpolationPoints], \
-//                                  zC[0:totalNumberInterpolationPoints], qC[0:totalNumberInterpolationCharges])
-//    if (singularity == SUBTRACTION) {
-//        #pragma acc enter data create(wC[0:totalNumberInterpolationWeights])
-//    }
-//#endif
-
-
 #ifdef OPENACC_ENABLED
-    #pragma acc data copyin(xS[0:totalNumberSourcePoints], yS[0:totalNumberSourcePoints], \
-                            zS[0:totalNumberSourcePoints], qS[0:totalNumberSourcePoints], \
-                            wS[0:totalNumberSourcePoints]) \
-                       copy(xC[0:totalNumberInterpolationPoints], yC[0:totalNumberInterpolationPoints], \
-                            zC[0:totalNumberInterpolationPoints], qC[0:totalNumberInterpolationCharges], \
-                            wC[0:totalNumberInterpolationWeights])
+    #pragma acc enter data create(xC[0:totalNumberInterpolationPoints], yC[0:totalNumberInterpolationPoints], \
+                                  zC[0:totalNumberInterpolationPoints], qC[0:totalNumberInterpolationCharges])
+
+    #pragma acc kernels present(xC,yC,zC,qC)
     {
+        for (int i=0;i<totalNumberInterpolationPoints;i++){
+            xC[i]=0.0;
+            yC[i]=0.0;
+            zC[i]=0.0;
+        }
+
+        for (int i=0;i<totalNumberInterpolationCharges;i++){
+            qC[i]=0.0;
+        }
+    }
+
+if (singularity == SUBTRACTION) {
+    #pragma acc enter data create(wC[0:totalNumberInterpolationWeights])
+
+    #pragma acc kernels present(wC)
+    {
+        for (int i=0;i<totalNumberInterpolationWeights;i++){
+            wC[i]=0.0;
+        }
+    }
+
+    }
 #endif
-
-
 
     if ((approximation == LAGRANGE) && (singularity == SKIPPING)) {
 
@@ -187,11 +196,6 @@ void Clusters_Sources_Construct(struct Clusters **clusters_addr, const struct Pa
         exit(1);
     }
     
-#ifdef OPENACC_ENABLED
-    #pragma acc wait
-    } // end ACC DATA REGION
-#endif
-    
     return;
 }
 
@@ -246,8 +250,29 @@ void Clusters_Targets_Construct(struct Clusters **clusters_addr, const struct Pa
 #ifdef OPENACC_ENABLED
     #pragma acc enter data create(xC[0:totalNumberInterpolationPoints], yC[0:totalNumberInterpolationPoints], \
                                   zC[0:totalNumberInterpolationPoints], qC[0:totalNumberInterpolationCharges])
+
+    #pragma acc kernels present(xC,yC,zC,qC)
+    {
+        for (int i=0;i<totalNumberInterpolationPoints;i++){
+            xC[i]=0.0;
+            yC[i]=0.0;
+            zC[i]=0.0;
+        }
+
+        for (int i=0;i<totalNumberInterpolationCharges;i++){
+            qC[i]=0.0;
+        }
+    }
+
+
     if (singularity == SUBTRACTION) {
         #pragma acc enter data create(wC[0:totalNumberInterpolationWeights])
+        #pragma acc kernels present(wC)
+        {
+            for (int i=0;i<totalNumberInterpolationWeights;i++){
+                wC[i]=0.0;
+            }
+        }
     }
 #endif
 
