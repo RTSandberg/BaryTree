@@ -23,7 +23,6 @@ void K_MQ_PP(int number_of_targets_in_batch, int number_of_source_points_in_clus
     double deltaLsq = deltasq / domainLength / domainLength;
     double norm_delta_L = sqrt(1 + 4 * deltaLsq);
     
-
 #ifdef OPENACC_ENABLED
     #pragma acc kernels async(gpu_async_stream_id) present(target_x, target_y, target_z, \
                         source_x, source_y, source_z, source_charge, potential)
@@ -74,9 +73,6 @@ void K_MQ_PP(int number_of_targets_in_batch, int number_of_source_points_in_clus
         #pragma acc atomic
 #endif
         potential[ii] += temporary_potential;
-        if (domainLength <= 0) { // if not periodic
-            potential[ii] -= target_z[ii];
-        }
     }
 #ifdef OPENACC_ENABLED
     } // end kernel

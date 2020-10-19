@@ -477,13 +477,15 @@ void pc_compute_interaction_list(
     if (run_params->kernel == MQ || run_params->kernel == ATAN) {
         double domainLength = run_params->kernel_params[0];
 
-        while (tz < -0.5*domainLength) {
-            tz += domainLength;
+        if (domainLength > 0) {
+            while (tz < -0.5*domainLength) {
+                tz += domainLength;
+            }
+            while (tz > 0.5 * domainLength) {
+                tz -= domainLength;
+            }
+            dist = fabs(tz);
         }
-        while (tz > 0.5 * domainLength) {
-            tz -= domainLength;
-        }
-        dist = fabs(tz);
     }
 
 
